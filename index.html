@@ -404,7 +404,8 @@ textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0
         <div class="form-group"><label>Last Name</label><input type="text" placeholder="Sharma" id="signupLast"/></div>
       </div>
       <div class="form-group"><label>Email Address</label><input type="email" placeholder="you@example.com" id="signupEmail"/></div>
-      <div class="form-group"><label>Password</label><input type="password" placeholder="Create a password" id="signupPass"/></div>
+      <div class="form-group"><label>Password</label><input type="password" placeholder="Min. 6 characters" id="signupPass"/></div>
+      <div class="form-group"><label>Confirm Password</label><input type="password" placeholder="Repeat your password" id="signupConfirm"/></div>
       <div id="doctorSignupExtra" style="display:none;">
         <div class="form-row">
           <div class="form-group"><label>Specialization</label><input type="text" placeholder="Cardiologist" id="signupSpec"/></div>
@@ -496,7 +497,7 @@ textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0
   <div class="modal">
     <div class="modal-head"><h3>Write Prescription</h3><button class="modal-close" onclick="closeModal('modalRx')">×</button></div>
     <div class="modal-body">
-      <div class="form-group"><label>Select Patient</label><select id="rxPatient"><option>Rahul Sharma</option><option>Priya Patel</option><option>Amit Kumar</option><option>Sneha Desai</option></select></div>
+      <div class="form-group"><label>Select Patient</label><select id="rxPatient"><option value="">-- Select Patient --</option></select></div>
       <div class="form-row">
         <div class="form-group"><label>Medicine Name</label><input type="text" placeholder="Paracetamol" id="rxMed"/></div>
         <div class="form-group"><label>Dosage</label><input type="text" placeholder="500mg" id="rxDose"/></div>
@@ -524,17 +525,11 @@ textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0
 let currentRole='patient';
 let currentPage='home';
 let currentUser={name:'',initials:'',email:'',age:'—',blood:'—',phone:'—',gender:'—',height:'—',weight:'—',spec:'—',license:'—',hospital:'—',emergencyName:'',emergencyPhone:''};
-let medicines=[
-  {id:1,name:'Vitamin D',dose:'1000 IU',freq:'Once daily',time:'08:00',stock:5,notes:'Morning dose'},
-  {id:2,name:'Aspirin',dose:'100mg',freq:'Once daily',time:'09:00',stock:15,notes:'Take with food'}
-];
-let appointments=[
-  {id:1,doc:'Dr. Sarah Johnson',spec:'Cardiologist',hosp:'Heart Care Center',date:'2026-01-15',time:'10:30',notes:'Regular checkup'}
-];
-let prescriptions=[
-  {id:1,patient:'Rahul Sharma',med:'Metformin',dose:'500mg',freq:'Twice daily',duration:'30 days',notes:'Take with meals',date:'2026-03-15'},
-  {id:2,patient:'Priya Patel',med:'Cetirizine',dose:'10mg',freq:'Once daily',duration:'7 days',notes:'Before bedtime',date:'2026-03-18'}
-];
+let medicines=[];
+let appointments=[];
+let prescriptions=[];
+let patients=[];
+let cartItems=[];
 
 // ══════════════════════════════════════════
 //  NAVIGATION
@@ -686,10 +681,10 @@ function patientHome(){
     <div class="greeting-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></div>
   </div>
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-icon blue">${pillIco()}</div><div class="stat-value">2</div><div class="stat-label">Active Medicines</div></div>
-    <div class="stat-card"><div class="stat-icon purple">${calIco()}</div><div class="stat-value">1</div><div class="stat-label">Upcoming Appts</div></div>
-    <div class="stat-card"><div class="stat-icon orange">${warnIco()}</div><div class="stat-value">1</div><div class="stat-label">Refills Needed</div></div>
-    <div class="stat-card"><div class="stat-icon green">${checkIco()}</div><div class="stat-value">85%</div><div class="stat-label">Adherence Rate</div></div>
+    <div class="stat-card"><div class="stat-icon blue">${pillIco()}</div><div class="stat-value">${medicines.length}</div><div class="stat-label">Active Medicines</div></div>
+    <div class="stat-card"><div class="stat-icon purple">${calIco()}</div><div class="stat-value">${appointments.length}</div><div class="stat-label">Upcoming Appts</div></div>
+    <div class="stat-card"><div class="stat-icon orange">${warnIco()}</div><div class="stat-value">${medicines.filter(m=>m.stock<=5).length}</div><div class="stat-label">Refills Needed</div></div>
+    <div class="stat-card"><div class="stat-icon green">${checkIco()}</div><div class="stat-value">${medicines.length>0?Math.round((medicines.filter(m=>m.stock>5).length/medicines.length)*100):0}%</div><div class="stat-label">Stock Health</div></div>
   </div>
   <div class="card">
     <div class="card-header"><span class="card-title">⏰ Today's Reminders</span></div>
@@ -861,94 +856,105 @@ function doctorPages(){return`
 <div class="page" id="page-doc-reports">${docReports()}</div>
 <div class="page" id="page-profile">${profilePage(true)}</div>
 `;}
-function docHome(){return`
+function docHome(){
+  const today=new Date().toISOString().split('T')[0];
+  const todayAppts=appointments.filter(a=>a.date===today);
+  const greetH=new Date().getHours();
+  const greet=greetH<12?'Good Morning':greetH<17?'Good Afternoon':'Good Evening';
+  return`
   <div class="greeting-banner" style="background:linear-gradient(120deg,#047857,#059669);">
-    <div class="greeting-text"><h2>Good Morning, ${(currentUser.name||'Doctor').split(' ')[0]}! 👨‍⚕️</h2><p>You have 3 appointments today</p></div>
+    <div class="greeting-text"><h2>${greet}, Dr. ${(currentUser.name||'Doctor').split(' ')[0]}! 👨‍⚕️</h2><p>You have ${todayAppts.length} appointment${todayAppts.length!==1?'s':''} today</p></div>
     <div class="greeting-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg></div>
   </div>
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-icon green">${usersIco()}</div><div class="stat-value">24</div><div class="stat-label">Total Patients</div></div>
-    <div class="stat-card"><div class="stat-icon blue">${calIco()}</div><div class="stat-value">3</div><div class="stat-label">Today's Appts</div></div>
-    <div class="stat-card"><div class="stat-icon purple">${rxIco()}</div><div class="stat-value">12</div><div class="stat-label">Prescriptions</div></div>
-    <div class="stat-card"><div class="stat-icon orange">${warnIco()}</div><div class="stat-value">2</div><div class="stat-label">Critical Alerts</div></div>
+    <div class="stat-card"><div class="stat-icon green">${usersIco()}</div><div class="stat-value">${patients.length}</div><div class="stat-label">Total Patients</div></div>
+    <div class="stat-card"><div class="stat-icon blue">${calIco()}</div><div class="stat-value">${todayAppts.length}</div><div class="stat-label">Today's Appts</div></div>
+    <div class="stat-card"><div class="stat-icon purple">${rxIco()}</div><div class="stat-value">${prescriptions.length}</div><div class="stat-label">Prescriptions</div></div>
+    <div class="stat-card"><div class="stat-icon orange">${warnIco()}</div><div class="stat-value">${appointments.filter(a=>a.status==='urgent').length}</div><div class="stat-label">Urgent Cases</div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
     <div class="card">
       <div class="card-header"><span class="card-title">👥 Recent Patients</span><button class="card-action outline" onclick="showPage('doc-patients')">${arrowIco()} View All</button></div>
+      ${patients.length===0?`<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:0.85rem;">No patients yet.<br>Patients will appear here after signing up.</div>`:`
       <table class="table">
-        <thead><tr><th>Patient</th><th>Status</th></tr></thead>
+        <thead><tr><th>Patient</th><th>Blood</th></tr></thead>
         <tbody>
-          ${[{name:'Rahul Sharma',meta:'25y · O+',status:'green',label:'Stable'},{name:'Priya Patel',meta:'32y · A+',status:'orange',label:'Review'},{name:'Amit Kumar',meta:'45y · B+',status:'red',label:'Critical'}].map(p=>`
-          <tr>
-            <td><div class="patient-row"><div class="avatar blue">${p.name[0]}</div><div class="patient-info"><div class="p-name">${p.name}</div><div class="p-meta">${p.meta}</div></div></div></td>
-            <td><span class="pill ${p.status}">${p.label}</span></td>
+          ${patients.slice(0,4).map(p=>`<tr>
+            <td><div class="patient-row"><div class="avatar blue">${(p.name||'?')[0]}</div><div class="patient-info"><div class="p-name">${p.name||'—'}</div><div class="p-meta">${p.age||'—'}y</div></div></div></td>
+            <td><span class="pill blue">${p.blood||'—'}</span></td>
           </tr>`).join('')}
         </tbody>
-      </table>
+      </table>`}
     </div>
     <div class="card">
       <div class="card-header"><span class="card-title">📅 Today's Schedule</span></div>
+      ${todayAppts.length===0?`<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:0.85rem;">No appointments today.</div>`:`
       <div class="timeline">
-        ${[{t:'09:00 AM',name:'Rahul Sharma',type:'Checkup',c:'blue'},{t:'11:30 AM',name:'Priya Patel',type:'Follow-up',c:'green'},{t:'02:00 PM',name:'Sneha Desai',type:'Consultation',c:'orange'}].map(a=>`
+        ${todayAppts.slice(0,4).map(a=>`
         <div class="tl-item">
-          <div class="tl-dot ${a.c}">${calIco()}</div>
-          <div class="tl-content"><div class="tl-title">${a.name}</div><div class="tl-sub">${a.type}</div><div class="tl-time">${a.t}</div></div>
+          <div class="tl-dot blue">${calIco()}</div>
+          <div class="tl-content"><div class="tl-title">${a.patientName||a.patient||'Patient'}</div><div class="tl-sub">${a.type||'Appointment'}</div><div class="tl-time">${a.time}</div></div>
         </div>`).join('')}
-      </div>
+      </div>`}
     </div>
   </div>
 `;}
 function docPatients(){return`
   <div class="page-title">My Patients</div>
-  <div class="page-sub">Monitor and manage your patient list</div>
-  <div class="search-bar"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="text" placeholder="Search patients..."/></div>
-  <div class="card" style="padding:0;overflow:hidden;">
+  <div class="page-sub">All registered patients on the platform</div>
+  <div class="search-bar"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="text" placeholder="Search patients..." oninput="searchPatients(this.value)"/></div>
+  <div id="patientTable">
+    ${renderPatientTable()}
+  </div>
+`;}
+function renderPatientTable(){
+  if(patients.length===0) return`<div class="card" style="text-align:center;padding:40px;color:var(--gray-400);">No patients registered yet.<br><br><small>Patients will appear here after they sign up as Patient on this platform.</small></div>`;
+  return`<div class="card" style="padding:0;overflow:hidden;">
     <table class="table">
-      <thead><tr><th>Patient</th><th>Age</th><th>Condition</th><th>Last Visit</th><th>Health</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Patient</th><th>Age</th><th>Blood</th><th>Email</th><th>Actions</th></tr></thead>
       <tbody>
-        ${[
-          {name:'Rahul Sharma',age:25,blood:'O+',cond:'Hypertension',last:'Mar 15',score:85,status:'green',sl:'Stable'},
-          {name:'Priya Patel',age:32,blood:'A+',cond:'Diabetes Type 2',last:'Mar 18',score:62,status:'orange',sl:'Review'},
-          {name:'Amit Kumar',age:45,blood:'B+',cond:'Heart Disease',last:'Mar 10',score:40,status:'red',sl:'Critical'},
-          {name:'Sneha Desai',age:28,blood:'AB+',cond:'Asthma',last:'Feb 28',score:78,status:'green',sl:'Stable'},
-          {name:'Vijay Nair',age:55,blood:'O-',cond:'Arthritis',last:'Mar 05',score:70,status:'blue',sl:'Monitoring'},
-        ].map(p=>`<tr>
-          <td><div class="patient-row"><div class="avatar ${p.status==='green'?'green':p.status==='red'?'teal':'blue'}">${p.name[0]}</div><div class="patient-info"><div class="p-name">${p.name}</div><div class="p-meta">${p.blood}</div></div></div></td>
-          <td>${p.age}y</td>
-          <td style="font-size:0.82rem;">${p.cond}</td>
-          <td style="font-size:0.78rem;color:var(--gray-500);">${p.last}</td>
-          <td><div class="health-score ${p.score>=75?'good':p.score>=50?'warn':'bad'}">${p.score}%</div><div class="progress-bar" style="width:80px;"><div class="progress-fill" style="width:${p.score}%;background:${p.score>=75?'var(--green)':p.score>=50?'var(--orange)':'var(--red)'};"></div></div></td>
-          <td><span class="pill ${p.status}">${p.sl}</span></td>
-          <td><div style="display:flex;gap:4px;"><button class="icon-btn view" onclick="showToast('Viewing ${p.name}'s report')">${eyeIco()}</button><button class="icon-btn edit" onclick="openModal('modalRx')">${rxIco()}</button></div></td>
+        ${patients.map(p=>`<tr>
+          <td><div class="patient-row"><div class="avatar blue">${(p.name||'?')[0]}</div><div class="patient-info"><div class="p-name">${p.name||'—'}</div></div></div></td>
+          <td>${p.age||'—'}</td>
+          <td><span class="pill blue">${p.blood||'—'}</span></td>
+          <td style="font-size:0.78rem;color:var(--gray-500);">${p.email||'—'}</td>
+          <td><div style="display:flex;gap:4px;">
+            <button class="icon-btn edit" title="Prescribe" onclick="document.getElementById('rxPatient').value='${p.name||''}';openModal('modalRx')">${rxIco()}</button>
+          </div></td>
         </tr>`).join('')}
       </tbody>
     </table>
-  </div>
-`;}
+  </div>`;
+}
+function searchPatients(q){
+  const rows=document.querySelectorAll('#patientTable tbody tr');
+  rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';});
+}
 function docAppointments(){return`
   <div class="page-title">Appointments</div>
-  <div class="page-sub">Manage your patient appointments</div>
-  <div class="card" style="padding:0;overflow:hidden;">
+  <div class="page-sub">All appointments booked by patients</div>
+  <div id="docApptList">
+    ${renderDocApptList()}
+  </div>
+`;}
+function renderDocApptList(){
+  if(appointments.length===0) return`<div class="card" style="text-align:center;padding:40px;color:var(--gray-400);">No appointments yet.<br><br><small>Appointments added by patients will appear here.</small></div>`;
+  return`<div class="card" style="padding:0;overflow:hidden;">
     <table class="table">
-      <thead><tr><th>Patient</th><th>Date & Time</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Doctor</th><th>Hospital</th><th>Notes</th></tr></thead>
       <tbody>
-        ${[
-          {name:'Rahul Sharma',age:25,date:'Mar 20',time:'09:00 AM',type:'Checkup',status:'green',sl:'Confirmed'},
-          {name:'Priya Patel',age:32,date:'Mar 20',time:'11:30 AM',type:'Follow-up',status:'blue',sl:'Confirmed'},
-          {name:'Sneha Desai',age:28,date:'Mar 20',time:'02:00 PM',type:'Consultation',status:'orange',sl:'Pending'},
-          {name:'Amit Kumar',age:45,date:'Mar 21',time:'10:00 AM',type:'Emergency',status:'red',sl:'Urgent'},
-          {name:'Vijay Nair',age:55,date:'Mar 22',time:'03:30 PM',type:'Review',status:'green',sl:'Confirmed'},
-        ].map(a=>`<tr>
-          <td><div class="patient-row"><div class="avatar blue">${a.name[0]}</div><div class="patient-info"><div class="p-name">${a.name}</div><div class="p-meta">${a.age}y</div></div></div></td>
-          <td><div style="font-weight:600;font-size:0.85rem;">${a.date}</div><div style="font-size:0.75rem;color:var(--gray-500);">${a.time}</div></td>
-          <td><span class="pill gray">${a.type}</span></td>
-          <td><span class="pill ${a.status}">${a.sl}</span></td>
-          <td><div style="display:flex;gap:4px;"><button class="icon-btn edit" onclick="showToast('Edit appointment')">${editIco()}</button><button class="icon-btn del" onclick="showToast('Appointment cancelled')">${trashIco()}</button></div></td>
+        ${appointments.map(a=>`<tr>
+          <td><div class="patient-row"><div class="avatar blue">${(a.patientName||currentUser.name||'P')[0]}</div><div class="patient-info"><div class="p-name">${a.patientName||'Patient'}</div></div></div></td>
+          <td style="font-weight:600;">${a.date||'—'}</td>
+          <td>${a.time||'—'}</td>
+          <td>${a.doc||'—'}</td>
+          <td style="font-size:0.78rem;color:var(--gray-500);">${a.hosp||'—'}</td>
+          <td style="font-size:0.78rem;color:var(--gray-500);">${a.notes||'—'}</td>
         </tr>`).join('')}
       </tbody>
     </table>
-  </div>
-`;}
+  </div>`;
+}
 function docPrescriptions(){return`
   <div class="page-title">Prescriptions</div>
   <div class="page-sub">Write and manage patient prescriptions</div>
@@ -960,59 +966,65 @@ function docPrescriptions(){return`
   </div>
 `;}
 function renderRxList(){
+  if(prescriptions.length===0) return`<div class="card" style="text-align:center;padding:40px;color:var(--gray-400);">No prescriptions yet.<br><br><button class="card-action" style="background:var(--green);" onclick="openModal('modalRx')">${plusIco()} Write First Prescription</button></div>`;
   return`<div class="card" style="padding:0;overflow:hidden;">
     <table class="table">
       <thead><tr><th>Patient</th><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Date</th><th>Actions</th></tr></thead>
       <tbody>
         ${prescriptions.map(rx=>`<tr>
-          <td><div class="patient-row"><div class="avatar green">${rx.patient[0]}</div><div class="patient-info"><div class="p-name">${rx.patient}</div></div></div></td>
-          <td style="font-weight:700;">${rx.med}</td>
-          <td>${rx.dose}</td>
-          <td>${rx.freq}</td>
-          <td><span class="pill blue">${rx.duration}</span></td>
-          <td style="font-size:0.78rem;color:var(--gray-500);">${rx.date}</td>
-          <td><div style="display:flex;gap:4px;"><button class="icon-btn edit" onclick="showToast('Edit prescription')">${editIco()}</button><button class="icon-btn del" onclick="deleteRx(${rx.id})">${trashIco()}</button></div></td>
+          <td><div class="patient-row"><div class="avatar green">${(rx.patient||'?')[0]}</div><div class="patient-info"><div class="p-name">${rx.patient||'—'}</div></div></div></td>
+          <td style="font-weight:700;">${rx.med||'—'}</td>
+          <td>${rx.dose||'—'}</td>
+          <td>${rx.freq||'—'}</td>
+          <td><span class="pill blue">${rx.duration||'—'}</span></td>
+          <td style="font-size:0.78rem;color:var(--gray-500);">${rx.date||'—'}</td>
+          <td><div style="display:flex;gap:4px;"><button class="icon-btn del" onclick="deleteRx('${rx.id}')">${trashIco()}</button></div></td>
         </tr>`).join('')}
       </tbody>
     </table>
-  </div>`;
-}
-function docReports(){return`
-  <div class="page-title">Patient Reports</div>
-  <div class="page-sub">Health analytics and patient insights</div>
+  </div>`;}
+function docReports(){
+  const totalRx=prescriptions.length;
+  const totalPat=patients.length;
+  const totalAppt=appointments.length;
+  return`
+  <div class="page-title">Reports & Analytics</div>
+  <div class="page-sub">Overview of clinical activity</div>
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-icon green">${checkIco()}</div><div class="stat-value">18</div><div class="stat-label">Stable Patients</div></div>
-    <div class="stat-card"><div class="stat-icon orange">${warnIco()}</div><div class="stat-value">4</div><div class="stat-label">Needs Review</div></div>
-    <div class="stat-card"><div class="stat-icon red">${heartIco()}</div><div class="stat-value">2</div><div class="stat-label">Critical Cases</div></div>
-    <div class="stat-card"><div class="stat-icon blue">${rxIco()}</div><div class="stat-value">12</div><div class="stat-label">Active Rx</div></div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-    <div class="card">
-      <div class="card-header"><span class="card-title">📊 Monthly Consultations</span></div>
-      <div class="report-chart">
-        <div class="bar-chart">
-          ${[{m:'Oct',v:60},{m:'Nov',v:75},{m:'Dec',v:55},{m:'Jan',v:80},{m:'Feb',v:70},{m:'Mar',v:90}].map((b,i)=>`<div class="bar-wrap"><div class="bar${i===5?' active':''}" style="height:${b.v}%;"></div><div class="bar-month">${b.m}</div></div>`).join('')}
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">🏥 Patient Health Distribution</span></div>
-      <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px;">
-        ${[{l:'Stable',v:75,c:'var(--green)'},{l:'Needs Review',v:17,c:'var(--orange)'},{l:'Critical',c:'var(--red)',v:8}].map(r=>`
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:600;margin-bottom:5px;"><span>${r.l}</span><span>${r.v}%</span></div>
-          <div class="progress-bar" style="height:8px;"><div class="progress-fill" style="width:${r.v}%;background:${r.c};"></div></div>
-        </div>`).join('')}
-      </div>
-    </div>
+    <div class="stat-card"><div class="stat-icon green">${usersIco()}</div><div class="stat-value">${totalPat}</div><div class="stat-label">Total Patients</div></div>
+    <div class="stat-card"><div class="stat-icon blue">${calIco()}</div><div class="stat-value">${totalAppt}</div><div class="stat-label">Total Appointments</div></div>
+    <div class="stat-card"><div class="stat-icon purple">${rxIco()}</div><div class="stat-value">${totalRx}</div><div class="stat-label">Prescriptions Written</div></div>
+    <div class="stat-card"><div class="stat-icon orange">${pillIco()}</div><div class="stat-value">${[...new Set(prescriptions.map(r=>r.med))].length}</div><div class="stat-label">Unique Medicines</div></div>
   </div>
   <div class="card">
-    <div class="card-header"><span class="card-title">📋 Recent Clinical Activities</span></div>
+    <div class="card-header"><span class="card-title">📋 Recent Prescriptions</span></div>
+    ${prescriptions.length===0?`<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:0.85rem;">No prescriptions written yet.</div>`:`
     <div class="timeline">
-      <div class="tl-item"><div class="tl-dot green">${rxIco()}</div><div class="tl-content"><div class="tl-title">Prescription sent to Priya Patel</div><div class="tl-sub">Cetirizine 10mg · Once daily · 7 days</div><div class="tl-time">Today, 10:30 AM</div></div></div>
-      <div class="tl-item"><div class="tl-dot blue">${calIco()}</div><div class="tl-content"><div class="tl-title">Appointment completed</div><div class="tl-sub">Rahul Sharma – Regular checkup</div><div class="tl-time">Today, 09:45 AM</div></div></div>
-      <div class="tl-item"><div class="tl-dot orange">${warnIco()}</div><div class="tl-content"><div class="tl-title">Critical alert – Amit Kumar</div><div class="tl-sub">Blood pressure: 160/100 · Immediate attention needed</div><div class="tl-time">Yesterday, 3:20 PM</div></div></div>
-    </div>
+      ${prescriptions.slice(-5).reverse().map(rx=>`
+      <div class="tl-item">
+        <div class="tl-dot green">${rxIco()}</div>
+        <div class="tl-content">
+          <div class="tl-title">Prescribed ${rx.med} to ${rx.patient}</div>
+          <div class="tl-sub">${rx.dose} · ${rx.freq} · ${rx.duration}</div>
+          <div class="tl-time">${rx.date||'—'}</div>
+        </div>
+      </div>`).join('')}
+    </div>`}
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">📅 Recent Appointments</span></div>
+    ${appointments.length===0?`<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:0.85rem;">No appointments yet.</div>`:`
+    <div class="timeline">
+      ${appointments.slice(-5).reverse().map(a=>`
+      <div class="tl-item">
+        <div class="tl-dot blue">${calIco()}</div>
+        <div class="tl-content">
+          <div class="tl-title">${a.doc||'Doctor'} – ${a.hosp||'—'}</div>
+          <div class="tl-sub">${a.notes||'No notes'}</div>
+          <div class="tl-time">${a.date||'—'} at ${a.time||'—'}</div>
+        </div>
+      </div>`).join('')}
+    </div>`}
   </div>
 `;}
 
@@ -1172,44 +1184,70 @@ function arrowIco(){return`<svg xmlns="http://www.w3.org/2000/svg" fill="none" v
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, query, where }
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, where, orderBy }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── YOUR FIREBASE CONFIG ──
 const firebaseConfig = {
   apiKey: "AIzaSyAJicXUB0bZbiYuy2BmpLjYLmGeIScbh9U",
   authDomain: "medicare-a690b.firebaseapp.com",
   projectId: "medicare-a690b",
   storageBucket: "medicare-a690b.firebasestorage.app",
   messagingSenderId: "171728336417",
-  appId: "1:171728336417:web:6b00a6d014df3d20d55560",
-  measurementId: "G-QMQJDM8X3V"
+  appId: "1:171728336417:web:6b00a6d014df3d20d55560"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ── LOADING OVERLAY ──
+// ════════════════════════════════════════
+//  LOADING OVERLAY
+// ════════════════════════════════════════
 function showLoading(msg='Loading...'){
   let ov=document.getElementById('fbLoading');
   if(!ov){
     ov=document.createElement('div');
     ov.id='fbLoading';
-    ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,41,0.7);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
-    ov.innerHTML=`<div style="width:44px;height:44px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style><div style="color:#fff;font-family:Sora,sans-serif;font-weight:600;font-size:0.95rem;">${msg}</div>`;
+    ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,41,0.75);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    ov.innerHTML=`<div style="width:48px;height:48px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style><div id="fbLoadMsg" style="color:#fff;font-family:Sora,sans-serif;font-weight:600;font-size:0.95rem;">${msg}</div>`;
     document.body.appendChild(ov);
   } else {
-    ov.querySelector('div:last-child').textContent=msg;
+    document.getElementById('fbLoadMsg').textContent=msg;
     ov.style.display='flex';
   }
 }
-function hideLoading(){
-  const ov=document.getElementById('fbLoading');
-  if(ov) ov.style.display='none';
+function hideLoading(){ const ov=document.getElementById('fbLoading'); if(ov) ov.style.display='none'; }
+
+// ════════════════════════════════════════
+//  LOAD ALL USER DATA
+// ════════════════════════════════════════
+async function loadUserData(uid){
+  try {
+    if(currentRole==='patient'){
+      // Load medicines
+      const ms = await getDocs(query(collection(db,'medicines'),where('uid','==',uid)));
+      medicines=[]; ms.forEach(d=>medicines.push({id:d.id,...d.data()}));
+      // Load appointments
+      const as = await getDocs(query(collection(db,'appointments'),where('uid','==',uid)));
+      appointments=[]; as.forEach(d=>appointments.push({id:d.id,...d.data()}));
+      // Load prescriptions sent TO this patient (by doctor)
+      const ps = await getDocs(query(collection(db,'prescriptions'),where('patientUid','==',uid)));
+      prescriptions=[]; ps.forEach(d=>prescriptions.push({id:d.id,...d.data()}));
+    } else {
+      // Doctor: load all patients, appointments, prescriptions written by this doctor
+      const allUsers = await getDocs(query(collection(db,'users'),where('role','==','patient')));
+      patients=[]; allUsers.forEach(d=>patients.push({id:d.id,...d.data()}));
+      const as = await getDocs(query(collection(db,'appointments'),where('doctorUid','==',uid)));
+      appointments=[]; as.forEach(d=>appointments.push({id:d.id,...d.data()}));
+      const ps = await getDocs(query(collection(db,'prescriptions'),where('doctorUid','==',uid)));
+      prescriptions=[]; ps.forEach(d=>prescriptions.push({id:d.id,...d.data()}));
+    }
+  } catch(e){ console.log('loadUserData error:',e); }
 }
 
-// ── OVERRIDE SIGNUP with Firebase ──
+// ════════════════════════════════════════
+//  AUTH — SIGNUP
+// ════════════════════════════════════════
 window.doSignup = async function(){
   const first=document.getElementById('signupFirst').value.trim();
   const last=document.getElementById('signupLast').value.trim();
@@ -1217,280 +1255,389 @@ window.doSignup = async function(){
   const pass=document.getElementById('signupPass').value;
   if(!first||!last||!email||!pass){showToast('Please fill in all fields','error');return;}
   if(pass.length<6){showToast('Password must be at least 6 characters','error');return;}
-
   showLoading('Creating your account...');
   try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    const uid = cred.user.uid;
-    const fullName = first+' '+last;
-    const initials = first[0].toUpperCase()+(last[0].toUpperCase());
-
-    // Build profile based on role
-    let profile = {name:fullName, initials, email, role:currentRole};
+    const cred = await createUserWithEmailAndPassword(auth,email,pass);
+    const uid=cred.user.uid;
+    const fullName=first+' '+last;
+    const initials=first[0].toUpperCase()+last[0].toUpperCase();
+    let profile={name:fullName,initials,email,role:currentRole,createdAt:new Date().toISOString()};
     if(currentRole==='patient'){
-      profile.age = document.getElementById('signupAge').value||'—';
-      profile.blood = document.getElementById('signupBlood').value||'—';
+      profile.age=document.getElementById('signupAge').value||'—';
+      profile.blood=document.getElementById('signupBlood').value||'—';
       profile.phone='—'; profile.gender='—'; profile.height='—'; profile.weight='—';
+      profile.emergencyName='—'; profile.emergencyPhone='—';
     } else {
-      profile.spec = document.getElementById('signupSpec').value||'—';
-      profile.license = document.getElementById('signupLicense').value||'—';
-      profile.hospital = document.getElementById('signupHospital').value||'—';
+      profile.spec=document.getElementById('signupSpec').value||'—';
+      profile.license=document.getElementById('signupLicense').value||'—';
+      profile.hospital=document.getElementById('signupHospital').value||'—';
       profile.phone='—';
     }
-
-    // Save profile to Firestore
-    await setDoc(doc(db,'users',uid), profile);
-    currentUser = profile;
-    currentUser.uid = uid;
-
-    hideLoading();
-    showToast('Account created successfully! 🎉','success');
+    await setDoc(doc(db,'users',uid),profile);
+    currentUser={...profile,uid};
     await loadUserData(uid);
-    launchApp();
-  } catch(e){
     hideLoading();
-    showToast(firebaseError(e.code),'error');
-  }
+    showToast('Welcome to MediCare, '+first+'! 🎉','success');
+    window.launchApp();
+  } catch(e){ hideLoading(); showToast(fbErr(e.code),'error'); }
 };
 
-// ── OVERRIDE LOGIN with Firebase ──
+// ════════════════════════════════════════
+//  AUTH — LOGIN
+// ════════════════════════════════════════
 window.doLogin = async function(){
   const email=document.getElementById('loginEmail').value.trim();
   const pass=document.getElementById('loginPass').value;
   if(!email||!pass){showToast('Please enter email and password','error');return;}
-
   showLoading('Signing you in...');
   try {
-    const cred = await signInWithEmailAndPassword(auth, email, pass);
-    const uid = cred.user.uid;
-
-    // Load profile from Firestore
-    const snap = await getDoc(doc(db,'users',uid));
+    const cred=await signInWithEmailAndPassword(auth,email,pass);
+    const uid=cred.user.uid;
+    const snap=await getDoc(doc(db,'users',uid));
     if(snap.exists()){
-      currentUser = snap.data();
-      currentUser.uid = uid;
-      currentRole = currentUser.role || currentRole;
+      currentUser={...snap.data(),uid};
+      currentRole=currentUser.role||'patient';
     }
-
     await loadUserData(uid);
     hideLoading();
-    showToast('Welcome back, '+currentUser.name.split(' ')[0]+'! 👋','success');
-    launchApp();
-  } catch(e){
-    hideLoading();
-    showToast(firebaseError(e.code),'error');
-  }
+    showToast('Welcome back, '+(currentUser.name||'').split(' ')[0]+'! 👋','success');
+    window.launchApp();
+  } catch(e){ hideLoading(); showToast(fbErr(e.code),'error'); }
 };
 
-// ── OVERRIDE LOGOUT with Firebase ──
+// ════════════════════════════════════════
+//  AUTH — LOGOUT
+// ════════════════════════════════════════
 window.doLogout = async function(){
+  if(!confirm('Are you sure you want to sign out?')) return;
   showLoading('Signing out...');
   try {
     await signOut(auth);
-    // Reset state
-    medicines=[];
-    appointments=[];
-    currentUser={name:'',initials:'',email:'',age:'—',blood:'—',phone:'—',gender:'—',height:'—',weight:'—',spec:'—',license:'—',hospital:'—'};
+    medicines=[];appointments=[];prescriptions=[];patients=[];cartItems=[];
+    currentUser={name:'',initials:'',email:'',age:'—',blood:'—',phone:'—',gender:'—',height:'—',weight:'—',spec:'—',license:'—',hospital:'—',emergencyName:'—',emergencyPhone:'—'};
+    window.location.hash='';
     hideLoading();
     showToast('Signed out successfully','success');
     showScreen('landing');
-  } catch(e){
-    hideLoading();
-    showToast('Error signing out','error');
-  }
+  } catch(e){ hideLoading(); showToast('Error signing out','error'); }
 };
 
-// ── LOAD USER DATA FROM FIRESTORE ──
-async function loadUserData(uid){
-  try {
-    // Load medicines
-    const medSnap = await getDocs(query(collection(db,'medicines'), where('uid','==',uid)));
-    medicines = [];
-    medSnap.forEach(d => medicines.push({id:d.id, ...d.data()}));
-
-    // Load appointments
-    const apptSnap = await getDocs(query(collection(db,'appointments'), where('uid','==',uid)));
-    appointments = [];
-    apptSnap.forEach(d => appointments.push({id:d.id, ...d.data()}));
-  } catch(e){
-    console.log('Error loading data:', e);
-  }
-}
-
-// ── OVERRIDE SAVE MEDICINE with Firestore ──
+// ════════════════════════════════════════
+//  MEDICINE — SAVE (ADD)
+// ════════════════════════════════════════
 window.saveMedicine = async function(){
   const n=document.getElementById('mName').value.trim();
   if(!n){showToast('Please enter a medicine name','error');return;}
   showLoading('Saving medicine...');
   try {
-    const medData = {
-      uid: currentUser.uid,
-      name: n,
-      dose: document.getElementById('mDose').value||'—',
-      freq: document.getElementById('mFreq').value,
-      time: document.getElementById('mTime').value,
-      stock: parseInt(document.getElementById('mStock').value)||30,
-      notes: document.getElementById('mNotes').value,
-      createdAt: new Date().toISOString()
+    const data={
+      uid:currentUser.uid, name:n,
+      dose:document.getElementById('mDose').value||'—',
+      freq:document.getElementById('mFreq').value,
+      time:document.getElementById('mTime').value,
+      stock:parseInt(document.getElementById('mStock').value)||30,
+      notes:document.getElementById('mNotes').value,
+      taken:false, createdAt:new Date().toISOString()
     };
-    const ref = await addDoc(collection(db,'medicines'), medData);
-    medicines.push({id:ref.id, ...medData});
+    const ref=await addDoc(collection(db,'medicines'),data);
+    medicines.push({id:ref.id,...data});
     closeModal('modalMed');
-    if(document.getElementById('medList')) document.getElementById('medList').innerHTML=renderMedList();
-    // Clear form
     ['mName','mDose','mStock','mNotes'].forEach(id=>document.getElementById(id).value='');
+    refreshPage();
     hideLoading();
-    showToast(n+' added successfully! 💊','success');
-  } catch(e){
-    hideLoading();
-    showToast('Error saving medicine','error');
-  }
+    showToast(n+' added! 💊','success');
+  } catch(e){ hideLoading(); showToast('Error saving: '+e.message,'error'); }
 };
 
-// ── OVERRIDE DELETE MEDICINE with Firestore ──
+// ════════════════════════════════════════
+//  MEDICINE — EDIT
+// ════════════════════════════════════════
+window.editMed = function(id){
+  const m=medicines.find(x=>x.id===id);
+  if(!m) return;
+  // Fill modal with existing data
+  document.getElementById('mName').value=m.name;
+  document.getElementById('mDose').value=m.dose;
+  document.getElementById('mFreq').value=m.freq;
+  document.getElementById('mTime').value=m.time;
+  document.getElementById('mStock').value=m.stock;
+  document.getElementById('mNotes').value=m.notes||'';
+  // Change save button to update
+  const btn=document.querySelector('#modalMed .btn-save');
+  btn.textContent='Update Medicine';
+  btn.onclick=()=>updateMedicine(id);
+  openModal('modalMed');
+};
+async function updateMedicine(id){
+  const n=document.getElementById('mName').value.trim();
+  if(!n){showToast('Please enter a medicine name','error');return;}
+  showLoading('Updating...');
+  try {
+    const data={
+      name:n, dose:document.getElementById('mDose').value||'—',
+      freq:document.getElementById('mFreq').value,
+      time:document.getElementById('mTime').value,
+      stock:parseInt(document.getElementById('mStock').value)||0,
+      notes:document.getElementById('mNotes').value
+    };
+    await updateDoc(doc(db,'medicines',id),data);
+    const idx=medicines.findIndex(m=>m.id===id);
+    if(idx>-1) medicines[idx]={...medicines[idx],...data};
+    // Reset button
+    const btn=document.querySelector('#modalMed .btn-save');
+    btn.textContent='Add Medicine'; btn.onclick=()=>saveMedicine();
+    closeModal('modalMed');
+    refreshPage();
+    hideLoading();
+    showToast('Medicine updated! ✅','success');
+  } catch(e){ hideLoading(); showToast('Error updating','error'); }
+}
+
+// ════════════════════════════════════════
+//  MEDICINE — DELETE
+// ════════════════════════════════════════
 window.deleteMed = async function(id){
   if(!confirm('Delete this medicine?')) return;
   showLoading('Deleting...');
   try {
     await deleteDoc(doc(db,'medicines',id));
-    medicines = medicines.filter(m=>m.id!==id);
-    if(document.getElementById('medList')) document.getElementById('medList').innerHTML=renderMedList();
+    medicines=medicines.filter(m=>m.id!==id);
+    refreshPage();
     hideLoading();
     showToast('Medicine removed','success');
-  } catch(e){
-    hideLoading();
-    showToast('Error deleting medicine','error');
-  }
+  } catch(e){ hideLoading(); showToast('Error deleting','error'); }
 };
 
-// ── OVERRIDE SAVE APPOINTMENT with Firestore ──
+// ════════════════════════════════════════
+//  MEDICINE — MARK AS TAKEN
+// ════════════════════════════════════════
+window.toggleTaken = async function(id,el){
+  const m=medicines.find(x=>x.id===id);
+  if(!m) return;
+  const newTaken=!m.taken;
+  try {
+    await updateDoc(doc(db,'medicines',id),{taken:newTaken});
+    m.taken=newTaken;
+    el.classList.toggle('done',newTaken);
+    showToast(newTaken?'Medicine marked as taken! ✅':'Marked as not taken','success');
+    // Refresh home stats
+    if(document.getElementById('page-home').classList.contains('active')) refreshPage();
+  } catch(e){ showToast('Error updating','error'); }
+};
+
+// ════════════════════════════════════════
+//  APPOINTMENT — SAVE
+// ════════════════════════════════════════
 window.saveAppointment = async function(){
   const d=document.getElementById('aDoc').value.trim();
   if(!d){showToast('Please enter doctor name','error');return;}
   showLoading('Saving appointment...');
   try {
-    const apptData = {
-      uid: currentUser.uid,
-      doc: d,
-      spec: document.getElementById('aSpec').value||'General',
-      hosp: document.getElementById('aHosp').value||'—',
-      date: document.getElementById('aDate').value||new Date().toISOString().split('T')[0],
-      time: document.getElementById('aTime').value,
-      notes: document.getElementById('aNotes').value,
-      createdAt: new Date().toISOString()
+    const data={
+      uid:currentUser.uid, doc:d,
+      spec:document.getElementById('aSpec').value||'General',
+      hosp:document.getElementById('aHosp').value||'—',
+      date:document.getElementById('aDate').value||new Date().toISOString().split('T')[0],
+      time:document.getElementById('aTime').value,
+      notes:document.getElementById('aNotes').value,
+      status:'confirmed', createdAt:new Date().toISOString()
     };
-    const ref = await addDoc(collection(db,'appointments'), apptData);
-    appointments.push({id:ref.id, ...apptData});
+    const ref=await addDoc(collection(db,'appointments'),data);
+    appointments.push({id:ref.id,...data});
     closeModal('modalAppt');
-    if(document.getElementById('apptList')) document.getElementById('apptList').innerHTML=renderApptList();
-    // Clear form
     ['aDoc','aSpec','aHosp','aNotes'].forEach(id=>document.getElementById(id).value='');
+    refreshPage();
     hideLoading();
     showToast('Appointment added! 📅','success');
-  } catch(e){
-    hideLoading();
-    showToast('Error saving appointment','error');
-  }
+  } catch(e){ hideLoading(); showToast('Error saving: '+e.message,'error'); }
 };
 
-// ── OVERRIDE DELETE APPOINTMENT with Firestore ──
+// ════════════════════════════════════════
+//  APPOINTMENT — EDIT
+// ════════════════════════════════════════
+window.editAppt = function(id){
+  const a=appointments.find(x=>x.id===id);
+  if(!a) return;
+  document.getElementById('aDoc').value=a.doc;
+  document.getElementById('aSpec').value=a.spec;
+  document.getElementById('aHosp').value=a.hosp;
+  document.getElementById('aDate').value=a.date;
+  document.getElementById('aTime').value=a.time;
+  document.getElementById('aNotes').value=a.notes||'';
+  const btn=document.querySelector('#modalAppt .btn-save');
+  btn.textContent='Update Appointment';
+  btn.onclick=()=>updateAppointment(id);
+  openModal('modalAppt');
+};
+async function updateAppointment(id){
+  const d=document.getElementById('aDoc').value.trim();
+  if(!d){showToast('Please enter doctor name','error');return;}
+  showLoading('Updating...');
+  try {
+    const data={
+      doc:d, spec:document.getElementById('aSpec').value||'General',
+      hosp:document.getElementById('aHosp').value||'—',
+      date:document.getElementById('aDate').value,
+      time:document.getElementById('aTime').value,
+      notes:document.getElementById('aNotes').value
+    };
+    await updateDoc(doc(db,'appointments',id),data);
+    const idx=appointments.findIndex(a=>a.id===id);
+    if(idx>-1) appointments[idx]={...appointments[idx],...data};
+    const btn=document.querySelector('#modalAppt .btn-save');
+    btn.textContent='Add Appointment'; btn.onclick=()=>saveAppointment();
+    closeModal('modalAppt');
+    refreshPage();
+    hideLoading();
+    showToast('Appointment updated! ✅','success');
+  } catch(e){ hideLoading(); showToast('Error updating','error'); }
+}
+
+// ════════════════════════════════════════
+//  APPOINTMENT — DELETE
+// ════════════════════════════════════════
 window.deleteAppt = async function(id){
   if(!confirm('Delete this appointment?')) return;
   showLoading('Deleting...');
   try {
     await deleteDoc(doc(db,'appointments',id));
-    appointments = appointments.filter(a=>a.id!==id);
-    if(document.getElementById('apptList')) document.getElementById('apptList').innerHTML=renderApptList();
+    appointments=appointments.filter(a=>a.id!==id);
+    refreshPage();
     hideLoading();
     showToast('Appointment removed','success');
-  } catch(e){
-    hideLoading();
-    showToast('Error deleting appointment','error');
-  }
+  } catch(e){ hideLoading(); showToast('Error deleting','error'); }
 };
 
-// ── OVERRIDE SAVE PRESCRIPTION with Firestore (Doctor) ──
+// ════════════════════════════════════════
+//  PRESCRIPTION — SAVE (Doctor)
+// ════════════════════════════════════════
 window.savePrescription = async function(){
   const m=document.getElementById('rxMed').value.trim();
   if(!m){showToast('Please enter a medicine name','error');return;}
+  const selPat=document.getElementById('rxPatient');
+  const patientName=selPat.options[selPat.selectedIndex].text;
+  const patientUid=selPat.value;
   showLoading('Sending prescription...');
   try {
-    const rxData = {
-      doctorUid: currentUser.uid,
-      doctorName: currentUser.name,
-      patient: document.getElementById('rxPatient').value,
-      med: m,
-      dose: document.getElementById('rxDose').value,
-      freq: document.getElementById('rxFreq').value,
-      duration: document.getElementById('rxDuration').value||'7 days',
-      notes: document.getElementById('rxNotes').value,
-      date: new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
-      createdAt: new Date().toISOString()
+    const data={
+      doctorUid:currentUser.uid, doctorName:currentUser.name,
+      patientUid, patientName,
+      med:m, dose:document.getElementById('rxDose').value,
+      freq:document.getElementById('rxFreq').value,
+      duration:document.getElementById('rxDuration').value||'7 days',
+      notes:document.getElementById('rxNotes').value,
+      date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
+      createdAt:new Date().toISOString()
     };
-    const ref = await addDoc(collection(db,'prescriptions'), rxData);
-    prescriptions.push({id:ref.id, ...rxData});
+    const ref=await addDoc(collection(db,'prescriptions'),data);
+    prescriptions.push({id:ref.id,...data});
     closeModal('modalRx');
-    if(document.getElementById('rxList')) document.getElementById('rxList').innerHTML=renderRxList();
     ['rxMed','rxDose','rxDuration','rxNotes'].forEach(id=>document.getElementById(id).value='');
+    refreshPage();
     hideLoading();
-    showToast('Prescription sent! 📋','success');
-  } catch(e){
-    hideLoading();
-    showToast('Error sending prescription','error');
-  }
+    showToast('Prescription sent to '+patientName+'! 📋','success');
+  } catch(e){ hideLoading(); showToast('Error: '+e.message,'error'); }
 };
 
-// ── OVERRIDE DELETE PRESCRIPTION with Firestore ──
+// ════════════════════════════════════════
+//  PRESCRIPTION — DELETE (Doctor)
+// ════════════════════════════════════════
 window.deleteRx = async function(id){
   if(!confirm('Delete this prescription?')) return;
   showLoading('Deleting...');
   try {
     await deleteDoc(doc(db,'prescriptions',id));
-    prescriptions = prescriptions.filter(r=>r.id!==id);
-    if(document.getElementById('rxList')) document.getElementById('rxList').innerHTML=renderRxList();
+    prescriptions=prescriptions.filter(r=>r.id!==id);
+    refreshPage();
     hideLoading();
     showToast('Prescription deleted','success');
-  } catch(e){
-    hideLoading();
-    showToast('Error deleting prescription','error');
-  }
+  } catch(e){ hideLoading(); showToast('Error deleting','error'); }
 };
 
-// ── AUTO LOGIN if session exists ──
-onAuthStateChanged(auth, async (user) => {
+// ════════════════════════════════════════
+//  PROFILE — SAVE
+// ════════════════════════════════════════
+window.saveProfile = async function(){
+  showLoading('Saving profile...');
+  try {
+    const updates={};
+    if(currentRole==='patient'){
+      updates.phone=document.getElementById('profPhone').value||currentUser.phone;
+      updates.age=document.getElementById('profAge').value||currentUser.age;
+      updates.gender=document.getElementById('profGender').value||currentUser.gender;
+      updates.blood=document.getElementById('profBlood').value||currentUser.blood;
+      updates.height=document.getElementById('profHeight').value||currentUser.height;
+      updates.weight=document.getElementById('profWeight').value||currentUser.weight;
+      updates.emergencyName=document.getElementById('profEmName').value||currentUser.emergencyName;
+      updates.emergencyPhone=document.getElementById('profEmPhone').value||currentUser.emergencyPhone;
+    } else {
+      updates.phone=document.getElementById('profPhone').value||currentUser.phone;
+      updates.spec=document.getElementById('profSpec').value||currentUser.spec;
+      updates.hospital=document.getElementById('profHospital').value||currentUser.hospital;
+      updates.license=document.getElementById('profLicense').value||currentUser.license;
+    }
+    await updateDoc(doc(db,'users',currentUser.uid),updates);
+    currentUser={...currentUser,...updates};
+    refreshPage();
+    hideLoading();
+    showToast('Profile saved! ✅','success');
+  } catch(e){ hideLoading(); showToast('Error saving profile','error'); }
+};
+
+// ════════════════════════════════════════
+//  CART — ADD TO CART
+// ════════════════════════════════════════
+window.addToCart = function(name,price){
+  const existing=cartItems.find(c=>c.name===name);
+  if(existing){ existing.qty++; }
+  else { cartItems.push({name,price,qty:1}); }
+  updateCartBadge();
+  showToast(name+' added to cart! 🛒','success');
+};
+function updateCartBadge(){
+  const badge=document.getElementById('cartBadge');
+  if(badge) badge.textContent=cartItems.reduce((s,c)=>s+c.qty,0);
+}
+window.viewCart = function(){
+  if(cartItems.length===0){showToast('Your cart is empty','error');return;}
+  const total=cartItems.reduce((s,c)=>s+(parseFloat(c.price)*c.qty),0).toFixed(2);
+  const list=cartItems.map(c=>`${c.name} x${c.qty} — ₹${(parseFloat(c.price)*c.qty).toFixed(2)}`).join('\n');
+  alert(`🛒 Your Cart:\n\n${list}\n\nTotal: ₹${total}\n\nOrder placed successfully!`);
+  cartItems=[];
+  updateCartBadge();
+};
+
+// ════════════════════════════════════════
+//  REFRESH PAGE CONTENT
+// ════════════════════════════════════════
+function refreshPage(){
+  const isDoc=currentRole==='doctor';
+  buildContent(isDoc);
+  showPage(currentPage);
+}
+
+// ════════════════════════════════════════
+//  AUTO LOGIN — SESSION RESTORE
+// ════════════════════════════════════════
+onAuthStateChanged(auth, async(user)=>{
   if(user && window.location.hash==='#app'){
-    showLoading('Restoring session...');
+    showLoading('Restoring your session...');
     try {
-      const snap = await getDoc(doc(db,'users',user.uid));
+      const snap=await getDoc(doc(db,'users',user.uid));
       if(snap.exists()){
-        currentUser = snap.data();
-        currentUser.uid = user.uid;
-        currentRole = currentUser.role || 'patient';
+        currentUser={...snap.data(),uid:user.uid};
+        currentRole=currentUser.role||'patient';
         await loadUserData(user.uid);
         hideLoading();
-        launchApp();
+        window.launchApp();
       } else { hideLoading(); }
-    } catch(e){ hideLoading(); }
+    } catch(e){ hideLoading(); console.log('Session restore error:',e); }
   }
 });
 
-// ── FIREBASE ERROR MESSAGES ──
-function firebaseError(code){
-  const msgs={
-    'auth/email-already-in-use':'This email is already registered. Please sign in.',
-    'auth/invalid-email':'Please enter a valid email address.',
-    'auth/weak-password':'Password must be at least 6 characters.',
-    'auth/user-not-found':'No account found with this email.',
-    'auth/wrong-password':'Incorrect password. Please try again.',
-    'auth/invalid-credential':'Incorrect email or password. Please try again.',
-    'auth/too-many-requests':'Too many attempts. Please try again later.',
-    'auth/network-request-failed':'Network error. Please check your connection.',
-  };
-  return msgs[code]||'Something went wrong. Please try again.';
-}
-
-// ── UPDATE launchApp to set hash ──
-const _origLaunch = window.launchApp;
+// ════════════════════════════════════════
+//  LAUNCH APP
+// ════════════════════════════════════════
 window.launchApp = function(){
   window.location.hash='app';
   buildApp();
@@ -1498,7 +1645,21 @@ window.launchApp = function(){
   showPage(currentRole==='patient'?'home':'doc-home');
 };
 
-console.log('🔥 Firebase connected successfully!');
+// ════════════════════════════════════════
+//  FIREBASE ERROR MESSAGES
+// ════════════════════════════════════════
+function fbErr(code){
+  return({
+    'auth/email-already-in-use':'This email is already registered.',
+    'auth/invalid-email':'Please enter a valid email address.',
+    'auth/weak-password':'Password must be at least 6 characters.',
+    'auth/user-not-found':'No account found with this email.',
+    'auth/wrong-password':'Incorrect password. Try again.',
+    'auth/invalid-credential':'Incorrect email or password.',
+    'auth/too-many-requests':'Too many attempts. Please try again later.',
+    'auth/network-request-failed':'Network error. Check your connection.',
+  }[code]||'Something went wrong. Please try again.');
+}
+
+console.log('🔥 Firebase connected — MediCare ready!');
 </script>
-</body>
-</html>
