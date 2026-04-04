@@ -27,6 +27,104 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font-b);background:var(--gray-50);color:var(--gray-800);min-height:100vh;}
 
+/* ── PASSWORD TOGGLE ── */
+.pass-wrap{position:relative;display:flex;align-items:center;}
+.pass-wrap input{width:100%;padding-right:44px;}
+.pass-eye{position:absolute;right:12px;background:none;border:none;cursor:pointer;color:var(--gray-400);display:flex;align-items:center;justify-content:center;padding:4px;border-radius:6px;transition:color 0.15s;}
+.pass-eye:hover{color:var(--blue);}
+.pass-eye svg{width:18px;height:18px;}
+
+/* ── OFFLINE BANNER ── */
+.offline-banner{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:9000;
+  background:#1a2340;color:#fff;
+  padding:14px 24px;
+  text-align:center;
+  font-family:var(--font-b);font-size:0.92rem;font-weight:600;
+  align-items:center;justify-content:center;gap:10px;
+}
+.offline-banner.show{display:flex;}
+.offline-banner svg{width:18px;height:18px;color:#f87171;flex-shrink:0;}
+.offline-banner .online-msg{color:#4ade80;}
+
+/* ── ONBOARDING ── */
+#onboarding{
+  background:linear-gradient(145deg,#0f1729 0%,#1a3de4 60%,#2250f4 100%);
+  align-items:center;justify-content:center;padding:40px 24px;
+  position:relative;overflow:hidden;
+}
+#onboarding::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");}
+.onboard-inner{max-width:480px;width:100%;position:relative;z-index:1;}
+.onboard-steps{display:flex;gap:8px;justify-content:center;margin-bottom:40px;}
+.onboard-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.3);transition:all 0.3s;}
+.onboard-dot.active{background:#fff;width:28px;border-radius:5px;}
+.onboard-slide{display:none;text-align:center;animation:fadeIn 0.35s ease;}
+.onboard-slide.active{display:block;}
+.onboard-icon{width:90px;height:90px;border-radius:24px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 28px;backdrop-filter:blur(10px);}
+.onboard-icon svg{width:46px;height:46px;color:#fff;}
+.onboard-title{font-family:var(--font-h);font-size:1.7rem;font-weight:800;color:#fff;margin-bottom:12px;letter-spacing:-0.3px;}
+.onboard-desc{font-size:1rem;color:rgba(255,255,255,0.7);line-height:1.65;margin-bottom:40px;}
+.onboard-btns{display:flex;gap:12px;justify-content:center;}
+.btn-onboard-next{padding:14px 36px;background:#fff;color:var(--blue);border:none;border-radius:50px;font-family:var(--font-h);font-size:1rem;font-weight:800;cursor:pointer;transition:all 0.2s;letter-spacing:0.2px;}
+.btn-onboard-next:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+.btn-onboard-skip{padding:14px 24px;background:transparent;color:rgba(255,255,255,0.6);border:1.5px solid rgba(255,255,255,0.2);border-radius:50px;font-family:var(--font-b);font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-onboard-skip:hover{color:#fff;border-color:rgba(255,255,255,0.5);}
+
+/* ── FORGOT PASSWORD MODAL ── */
+#modalForgot .modal-body p{font-size:0.9rem;color:var(--gray-500);margin-bottom:18px;line-height:1.6;}
+
+/* ── NOTIFICATION PANEL ── */
+.notif-panel{
+  position:fixed;top:70px;right:16px;width:320px;
+  background:#fff;border-radius:var(--r-lg);
+  border:1.5px solid var(--gray-200);
+  box-shadow:var(--shadow-xl);
+  z-index:300;
+  display:none;
+  animation:slideUp 0.2s ease;
+}
+.notif-panel.open{display:block;}
+.notif-panel-head{padding:14px 18px;border-bottom:1.5px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;}
+.notif-panel-head h4{font-family:var(--font-h);font-weight:700;font-size:0.95rem;}
+.notif-clear{font-size:0.78rem;font-weight:600;color:var(--blue);cursor:pointer;background:none;border:none;font-family:var(--font-b);}
+.notif-item{display:flex;gap:12px;align-items:flex-start;padding:12px 18px;border-bottom:1px solid var(--gray-100);cursor:pointer;transition:background 0.15s;}
+.notif-item:hover{background:var(--gray-50);}
+.notif-item:last-child{border-bottom:none;}
+.notif-item-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.notif-item-icon svg{width:17px;height:17px;}
+.notif-item-icon.med{background:var(--blue-light);color:var(--blue);}
+.notif-item-icon.warn{background:var(--orange-light);color:var(--orange);}
+.notif-item-icon.appt{background:var(--purple-light);color:var(--purple);}
+.notif-item-text .nt{font-weight:700;font-size:0.83rem;color:var(--gray-800);}
+.notif-item-text .ns{font-size:0.75rem;color:var(--gray-500);margin-top:2px;}
+.notif-empty{padding:28px;text-align:center;color:var(--gray-400);font-size:0.85rem;}
+.notif-dot-active{background:var(--red)!important;}
+
+/* ── HISTORY LOG ── */
+.history-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--gray-100);}
+.history-item:last-child{border-bottom:none;}
+.history-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.history-icon svg{width:15px;height:15px;color:#fff;}
+.history-icon.taken{background:var(--green);}
+.history-icon.skipped{background:var(--red);}
+.history-icon.added{background:var(--blue);}
+.history-text .ht{font-weight:700;font-size:0.85rem;}
+.history-text .hs{font-size:0.75rem;color:var(--gray-500);margin-top:2px;}
+.history-time{font-size:0.72rem;color:var(--gray-400);margin-left:auto;white-space:nowrap;padding-top:2px;}
+
+/* ── PUSH NOTIF BANNER ── */
+.push-banner{
+  background:linear-gradient(120deg,var(--blue),var(--blue2));
+  border-radius:var(--r-lg);padding:16px 18px;margin-bottom:16px;
+  display:flex;align-items:center;gap:14px;color:#fff;
+}
+.push-banner svg{width:28px;height:28px;flex-shrink:0;}
+.push-banner-text h4{font-family:var(--font-h);font-weight:700;font-size:0.95rem;}
+.push-banner-text p{font-size:0.8rem;opacity:0.8;margin-top:2px;}
+.btn-enable-notif{margin-left:auto;padding:8px 16px;background:#fff;color:var(--blue);border:none;border-radius:50px;font-family:var(--font-h);font-size:0.8rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.18s;flex-shrink:0;}
+.btn-enable-notif:hover{transform:scale(1.04);}
+
+
 /* ── SCREENS ── */
 .screen{display:none;min-height:100vh;}
 .screen.active{display:flex;flex-direction:column;}
@@ -394,7 +492,19 @@ textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0
     <!-- LOGIN -->
     <div id="loginForm">
       <div class="form-group"><label>Email Address</label><input type="email" placeholder="you@example.com" id="loginEmail"/></div>
-      <div class="form-group"><label>Password</label><input type="password" placeholder="Enter your password" id="loginPass"/></div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pass-wrap">
+          <input type="password" placeholder="Enter your password" id="loginPass"/>
+          <button type="button" class="pass-eye" onclick="togglePass('loginPass',this)" title="Show/Hide Password">
+            <svg id="eyeShow1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+            <svg id="eyeHide1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+          </button>
+        </div>
+      </div>
+      <div style="text-align:right;margin:-8px 0 16px;">
+        <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:var(--blue);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:var(--font-b);">Forgot Password?</button>
+      </div>
       <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
     </div>
     <!-- SIGNUP -->
@@ -404,7 +514,15 @@ textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0
         <div class="form-group"><label>Last Name</label><input type="text" placeholder="Sharma" id="signupLast"/></div>
       </div>
       <div class="form-group"><label>Email Address</label><input type="email" placeholder="you@example.com" id="signupEmail"/></div>
-      <div class="form-group"><label>Password</label><input type="password" placeholder="Min. 6 characters" id="signupPass"/></div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pass-wrap">
+          <input type="password" placeholder="Min. 6 characters" id="signupPass"/>
+          <button type="button" class="pass-eye" onclick="togglePass('signupPass',this)" title="Show/Hide Password">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+          </button>
+        </div>
+      </div>
       <div class="form-group"><label>Confirm Password</label><input type="password" placeholder="Repeat your password" id="signupConfirm"/></div>
       <div id="doctorSignupExtra" style="display:none;">
         <div class="form-row">
@@ -427,8 +545,99 @@ textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0
 </div>
 
 <!-- ═══════════════════════════════════════ -->
-<!--  APP SCREEN                            -->
+<!--  OFFLINE BANNER                        -->
 <!-- ═══════════════════════════════════════ -->
+<div class="offline-banner" id="offlineBanner">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></svg>
+  <span id="offlineMsg">⚠️ You are offline. Please check your internet connection.</span>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  ONBOARDING SCREEN                     -->
+<!-- ═══════════════════════════════════════ -->
+<div id="onboarding" class="screen">
+  <div class="onboard-inner">
+    <div class="onboard-steps">
+      <div class="onboard-dot active" id="dot0"></div>
+      <div class="onboard-dot" id="dot1"></div>
+      <div class="onboard-dot" id="dot2"></div>
+    </div>
+    <!-- Slide 1 -->
+    <div class="onboard-slide active" id="slide0">
+      <div class="onboard-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+      </div>
+      <h2 class="onboard-title">Welcome to MediCare</h2>
+      <p class="onboard-desc">Your trusted health companion. Manage your medicines, appointments and health — all in one simple place.</p>
+      <div class="onboard-btns">
+        <button class="btn-onboard-skip" onclick="skipOnboarding()">Skip</button>
+        <button class="btn-onboard-next" onclick="nextSlide(1)">Next →</button>
+      </div>
+    </div>
+    <!-- Slide 2 -->
+    <div class="onboard-slide" id="slide1">
+      <div class="onboard-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg>
+      </div>
+      <h2 class="onboard-title">Never Miss a Medicine</h2>
+      <p class="onboard-desc">Add your medicines and set reminder times. MediCare will notify you when it's time to take them — even if the app is closed.</p>
+      <div class="onboard-btns">
+        <button class="btn-onboard-skip" onclick="nextSlide(0)">← Back</button>
+        <button class="btn-onboard-next" onclick="nextSlide(2)">Next →</button>
+      </div>
+    </div>
+    <!-- Slide 3 -->
+    <div class="onboard-slide" id="slide2">
+      <div class="onboard-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>
+      </div>
+      <h2 class="onboard-title">Connect with Doctors</h2>
+      <p class="onboard-desc">Doctors can see your profile, manage appointments and send prescriptions directly to you. Everything in one safe place.</p>
+      <div class="onboard-btns">
+        <button class="btn-onboard-skip" onclick="nextSlide(1)">← Back</button>
+        <button class="btn-onboard-next" onclick="skipOnboarding()">Get Started 🎉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  NOTIFICATION PANEL                    -->
+<!-- ═══════════════════════════════════════ -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-head">
+    <h4>🔔 Notifications</h4>
+    <button class="notif-clear" onclick="clearNotifications()">Clear All</button>
+  </div>
+  <div id="notifList">
+    <div class="notif-empty">No notifications yet.<br>Medicine reminders will appear here.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  FORGOT PASSWORD MODAL                 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modalForgot">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>🔑 Reset Password</h3>
+      <button class="modal-close" onclick="closeModal('modalForgot')">×</button>
+    </div>
+    <div class="modal-body">
+      <p>Enter your email address and we will send you a link to reset your password. Please check your inbox after submitting.</p>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" placeholder="you@example.com" id="forgotEmail"/>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('modalForgot')">Cancel</button>
+      <button class="btn-save" onclick="sendPasswordReset()">Send Reset Link</button>
+    </div>
+  </div>
+</div>
+
+
 <div id="app" class="screen">
   <header class="app-header">
     <div class="app-logo">
@@ -437,7 +646,7 @@ textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0
     </div>
     <div class="header-right">
       <div class="header-role-badge" id="headerBadge"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span id="headerRoleText">Patient</span></div>
-      <button class="header-notif" onclick="showToast('No new notifications','success')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg><span class="notif-dot"></span></button>
+      <button class="header-notif" id="notifBtn" onclick="toggleNotifPanel()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg><span class="notif-dot" id="notifDot" style="display:none;"></span></button>
       <div class="header-avatar" id="headerAvatar" onclick="showPage('profile')">R</div>
     </div>
   </header>
@@ -530,6 +739,8 @@ let appointments=[];
 let prescriptions=[];
 let patients=[];
 let cartItems=[];
+let medHistory=[];
+let notifications=[];
 
 // ══════════════════════════════════════════
 //  NAVIGATION
@@ -617,9 +828,10 @@ function buildApp(){
 }
 function patientNav(){return[
   {id:'home',icon:homeIco(),label:'Dashboard'},
-  {id:'medicines',icon:pillIco(),label:'Medicines',badge:2},
+  {id:'medicines',icon:pillIco(),label:'Medicines',badge:medicines.filter(m=>m.stock<=5).length||null},
   {id:'appointments',icon:calIco(),label:'Appointments'},
   {id:'pharmacy',icon:cartIco(),label:'Pharmacy'},
+  {id:'history',icon:historyIco(),label:'History'},
   {id:'profile',icon:userIco(),label:'My Profile'},
 ];}
 function doctorNav(){return[
@@ -667,6 +879,9 @@ function patientPages(){return`
 <div class="page" id="page-pharmacy">
   ${patientPharmacy()}
 </div>
+<div class="page" id="page-history">
+  ${patientHistory()}
+</div>
 <div class="page" id="page-profile">
   ${profilePage()}
 </div>
@@ -676,6 +891,7 @@ function patientHome(){
   const greet=h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening';
   const firstName=(currentUser.name||'User').split(' ')[0];
   return`
+  ${pushNotifBanner()}
   <div class="greeting-banner">
     <div class="greeting-text"><h2>${greet}, ${firstName}! 👋</h2><p>Here's your health summary for today</p></div>
     <div class="greeting-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></div>
@@ -848,6 +1064,31 @@ function filterPharm(q){
 // ══════════════════════════════════════════
 //  DOCTOR PAGES
 // ══════════════════════════════════════════
+function patientHistory(){
+  const log=medHistory.slice().reverse();
+  return`
+  <div class="page-title">Medicine History</div>
+  <div class="page-sub">A complete log of your medicine activity</div>
+  ${log.length===0?`
+  <div class="card" style="text-align:center;padding:48px 20px;">
+    <div style="font-size:3rem;margin-bottom:12px;">📋</div>
+    <div style="font-weight:700;font-size:1rem;color:var(--gray-800);margin-bottom:6px;">No history yet</div>
+    <div style="font-size:0.85rem;color:var(--gray-500);">Your medicine intake log will appear here once you start marking medicines as taken.</div>
+  </div>`:`
+  <div class="card" style="padding:0;overflow:hidden;">
+    ${log.map(h=>`
+    <div class="history-item">
+      <div class="history-icon ${h.type}">
+        ${h.type==='taken'?checkIco():h.type==='added'?plusIco():trashIco()}
+      </div>
+      <div class="history-text">
+        <div class="ht">${h.type==='taken'?'Took':'Added'} ${h.name}</div>
+        <div class="hs">${h.dose}${h.note?' · '+h.note:''}</div>
+      </div>
+      <div class="history-time">${h.time}</div>
+    </div>`).join('')}
+  </div>`}
+`;}
 function doctorPages(){return`
 <div class="page active" id="page-doc-home">${docHome()}</div>
 <div class="page" id="page-doc-patients">${docPatients()}</div>
@@ -1175,6 +1416,214 @@ function clockIco(){return`<svg xmlns="http://www.w3.org/2000/svg" fill="none" v
 function locIco(){return`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>`;}
 function eyeIco(){return`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>`;}
 function arrowIco(){return`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>`;}
+function historyIco(){return`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>`;}
+
+// ══════════════════════════════════════════
+//  ONBOARDING
+// ══════════════════════════════════════════
+function showOnboarding(){
+  // Only show once per device
+  if(localStorage.getItem('medicare_onboarded')) { showScreen('landing'); return; }
+  showScreen('onboarding');
+}
+function nextSlide(idx){
+  document.querySelectorAll('.onboard-slide').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.onboard-dot').forEach(d=>d.classList.remove('active'));
+  document.getElementById('slide'+idx).classList.add('active');
+  document.getElementById('dot'+idx).classList.add('active');
+}
+function skipOnboarding(){
+  localStorage.setItem('medicare_onboarded','1');
+  showScreen('landing');
+}
+
+// ══════════════════════════════════════════
+//  PASSWORD TOGGLE
+// ══════════════════════════════════════════
+function togglePass(inputId, btn){
+  const inp=document.getElementById(inputId);
+  const isPass=inp.type==='password';
+  inp.type=isPass?'text':'password';
+  // swap svg visibility if dual icons
+  const svgs=btn.querySelectorAll('svg');
+  if(svgs.length===2){
+    svgs[0].style.display=isPass?'none':'block';
+    svgs[1].style.display=isPass?'block':'none';
+  }
+}
+
+// ══════════════════════════════════════════
+//  FORGOT PASSWORD
+// ══════════════════════════════════════════
+function openForgotPassword(){
+  document.getElementById('forgotEmail').value=document.getElementById('loginEmail').value||'';
+  openModal('modalForgot');
+}
+
+// ══════════════════════════════════════════
+//  OFFLINE DETECTION
+// ══════════════════════════════════════════
+function initOfflineDetection(){
+  const banner=document.getElementById('offlineBanner');
+  const msg=document.getElementById('offlineMsg');
+  function updateStatus(){
+    if(!navigator.onLine){
+      banner.classList.add('show');
+      msg.innerHTML='⚠️ You are offline. Please check your internet connection.';
+    } else {
+      if(banner.classList.contains('show')){
+        msg.innerHTML='<span class="online-msg">✅ You are back online!</span>';
+        setTimeout(()=>banner.classList.remove('show'),2500);
+      }
+    }
+  }
+  window.addEventListener('online', updateStatus);
+  window.addEventListener('offline', updateStatus);
+  updateStatus();
+}
+
+// ══════════════════════════════════════════
+//  NOTIFICATIONS PANEL
+// ══════════════════════════════════════════
+function toggleNotifPanel(){
+  const panel=document.getElementById('notifPanel');
+  panel.classList.toggle('open');
+  // close when clicking outside
+  if(panel.classList.contains('open')){
+    setTimeout(()=>{
+      document.addEventListener('click', closeNotifOnOutside);
+    }, 10);
+  }
+}
+function closeNotifOnOutside(e){
+  const panel=document.getElementById('notifPanel');
+  const btn=document.getElementById('notifBtn');
+  if(!panel.contains(e.target)&&!btn.contains(e.target)){
+    panel.classList.remove('open');
+    document.removeEventListener('click', closeNotifOnOutside);
+  }
+}
+function addNotification(icon, title, sub, type='med'){
+  const time=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  notifications.unshift({icon,title,sub,type,time});
+  renderNotifications();
+  // show dot
+  const dot=document.getElementById('notifDot');
+  if(dot) dot.style.display='block';
+}
+function renderNotifications(){
+  const list=document.getElementById('notifList');
+  if(!list) return;
+  if(notifications.length===0){
+    list.innerHTML='<div class="notif-empty">No notifications yet.<br>Medicine reminders will appear here.</div>';
+    return;
+  }
+  list.innerHTML=notifications.slice(0,8).map(n=>`
+  <div class="notif-item">
+    <div class="notif-item-icon ${n.type}">${n.icon}</div>
+    <div class="notif-item-text">
+      <div class="nt">${n.title}</div>
+      <div class="ns">${n.sub} · ${n.time}</div>
+    </div>
+  </div>`).join('');
+}
+function clearNotifications(){
+  notifications=[];
+  renderNotifications();
+  const dot=document.getElementById('notifDot');
+  if(dot) dot.style.display='none';
+}
+
+// ══════════════════════════════════════════
+//  PUSH NOTIFICATIONS
+// ══════════════════════════════════════════
+let notifPermission=false;
+function requestPushNotifications(){
+  if(!('Notification' in window)){
+    showToast('Notifications not supported on this browser','error');
+    return;
+  }
+  Notification.requestPermission().then(perm=>{
+    notifPermission=(perm==='granted');
+    if(notifPermission){
+      showToast('Notifications enabled! You will be reminded for medicines 💊','success');
+      addNotification(pillIco(),'Notifications Enabled','You will receive medicine reminders','med');
+      scheduleMedicineReminders();
+      // Re-render home to remove the banner
+      if(currentPage==='home') refreshPage();
+    } else {
+      showToast('Notifications blocked. Please allow from browser settings.','error');
+    }
+  });
+}
+function scheduleMedicineReminders(){
+  if(!notifPermission) return;
+  medicines.forEach(m=>{
+    const [h,min]=m.time.split(':').map(Number);
+    const now=new Date();
+    const target=new Date();
+    target.setHours(h,min,0,0);
+    if(target<=now) target.setDate(target.getDate()+1);
+    const delay=target-now;
+    setTimeout(()=>{
+      // Show browser notification
+      new Notification('💊 Medicine Reminder — MediCare',{
+        body:`Time to take ${m.name} (${m.dose})`,
+        icon:'/favicon.ico',
+        badge:'/favicon.ico'
+      });
+      // Add to in-app notifications
+      addNotification(pillIco(),`Time for ${m.name}`,`${m.dose} · ${m.freq}`,'med');
+      showToast(`⏰ Time to take ${m.name} (${m.dose})!`,'success');
+      // Reschedule for next day
+      setTimeout(()=>scheduleMedicineReminders(), 60000);
+    }, delay);
+  });
+}
+
+// ══════════════════════════════════════════
+//  MEDICINE HISTORY LOG
+// ══════════════════════════════════════════
+function logHistory(type, name, dose, note=''){
+  const time=new Date().toLocaleString('en-IN',{
+    day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'
+  });
+  medHistory.push({type,name,dose,note,time});
+  // Save to localStorage so history persists
+  try{ localStorage.setItem('medicare_history_'+currentUser.uid, JSON.stringify(medHistory.slice(-100))); }
+  catch(e){}
+}
+function loadHistory(){
+  try{
+    const saved=localStorage.getItem('medicare_history_'+currentUser.uid);
+    if(saved) medHistory=JSON.parse(saved);
+  } catch(e){ medHistory=[]; }
+}
+
+// ══════════════════════════════════════════
+//  PUSH NOTIFICATION BANNER (in home page)
+// ══════════════════════════════════════════
+function pushNotifBanner(){
+  if(notifPermission || !('Notification' in window)) return '';
+  if(Notification.permission==='granted'){ notifPermission=true; return ''; }
+  return`
+  <div class="push-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
+    <div class="push-banner-text">
+      <h4>Enable Medicine Reminders</h4>
+      <p>Get notified when it's time to take your medicine</p>
+    </div>
+    <button class="btn-enable-notif" onclick="requestPushNotifications()">Enable</button>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  INIT on page load
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', ()=>{
+  initOfflineDetection();
+  showOnboarding();
+});
 </script>
 
 <!-- ═══════════════════════════════════════ -->
@@ -1182,7 +1631,7 @@ function arrowIco(){return`<svg xmlns="http://www.w3.org/2000/svg" fill="none" v
 <!-- ═══════════════════════════════════════ -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, where, orderBy }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -1217,6 +1666,24 @@ function showLoading(msg='Loading...'){
   }
 }
 function hideLoading(){ const ov=document.getElementById('fbLoading'); if(ov) ov.style.display='none'; }
+
+// ════════════════════════════════════════
+//  FORGOT PASSWORD
+// ════════════════════════════════════════
+window.sendPasswordReset = async function(){
+  const email=document.getElementById('forgotEmail').value.trim();
+  if(!email){showToast('Please enter your email address','error');return;}
+  showLoading('Sending reset link...');
+  try {
+    await sendPasswordResetEmail(auth, email);
+    closeModal('modalForgot');
+    hideLoading();
+    showToast('Reset link sent! Please check your email inbox 📧','success');
+  } catch(e){
+    hideLoading();
+    showToast(fbErr(e.code),'error');
+  }
+};
 
 // ════════════════════════════════════════
 //  LOAD ALL USER DATA
@@ -1276,6 +1743,7 @@ window.doSignup = async function(){
     await setDoc(doc(db,'users',uid),profile);
     currentUser={...profile,uid};
     await loadUserData(uid);
+    loadHistory();
     hideLoading();
     showToast('Welcome to MediCare, '+first+'! 🎉','success');
     window.launchApp();
@@ -1299,6 +1767,11 @@ window.doLogin = async function(){
       currentRole=currentUser.role||'patient';
     }
     await loadUserData(uid);
+    loadHistory();
+    if(notifPermission||Notification.permission==='granted'){
+      notifPermission=true;
+      scheduleMedicineReminders();
+    }
     hideLoading();
     showToast('Welcome back, '+(currentUser.name||'').split(' ')[0]+'! 👋','success');
     window.launchApp();
@@ -1314,6 +1787,7 @@ window.doLogout = async function(){
   try {
     await signOut(auth);
     medicines=[];appointments=[];prescriptions=[];patients=[];cartItems=[];
+    medHistory=[];notifications=[];notifPermission=false;
     currentUser={name:'',initials:'',email:'',age:'—',blood:'—',phone:'—',gender:'—',height:'—',weight:'—',spec:'—',license:'—',hospital:'—',emergencyName:'—',emergencyPhone:'—'};
     window.location.hash='';
     hideLoading();
@@ -1343,6 +1817,10 @@ window.saveMedicine = async function(){
     medicines.push({id:ref.id,...data});
     closeModal('modalMed');
     ['mName','mDose','mStock','mNotes'].forEach(id=>document.getElementById(id).value='');
+    logHistory('added', n, document.getElementById('mDose')?.value||data.dose, 'Added to medicines');
+    addNotification(pillIco(), 'Medicine Added', `${n} (${data.dose})`, 'med');
+    // Schedule reminder if notifications enabled
+    if(notifPermission) scheduleMedicineReminders();
     refreshPage();
     hideLoading();
     showToast(n+' added! 💊','success');
@@ -1419,9 +1897,17 @@ window.toggleTaken = async function(id,el){
     await updateDoc(doc(db,'medicines',id),{taken:newTaken});
     m.taken=newTaken;
     el.classList.toggle('done',newTaken);
-    showToast(newTaken?'Medicine marked as taken! ✅':'Marked as not taken','success');
-    // Refresh home stats
+    if(newTaken){
+      // Log to history
+      logHistory('taken', m.name, m.dose);
+      // Add notification
+      addNotification(pillIco(), 'Medicine Taken ✅', `${m.name} (${m.dose})`, 'med');
+      showToast('✅ '+m.name+' marked as taken!','success');
+    } else {
+      showToast('Marked as not taken','success');
+    }
     if(document.getElementById('page-home').classList.contains('active')) refreshPage();
+    if(document.getElementById('page-history')&&document.getElementById('page-history').classList.contains('active')) refreshPage();
   } catch(e){ showToast('Error updating','error'); }
 };
 
@@ -1628,6 +2114,8 @@ onAuthStateChanged(auth, async(user)=>{
         currentUser={...snap.data(),uid:user.uid};
         currentRole=currentUser.role||'patient';
         await loadUserData(user.uid);
+        loadHistory();
+        if(Notification.permission==='granted') notifPermission=true;
         hideLoading();
         window.launchApp();
       } else { hideLoading(); }
