@@ -540,6 +540,12 @@ textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0
         </div>
       </div>
       <button class="btn-primary" id="signupBtn" onclick="doSignup()">Create Account</button>
+      <p style="text-align:center;margin-top:14px;font-size:0.78rem;color:var(--gray-400);line-height:1.6;">
+        By creating an account you agree to our
+        <a href="#" onclick="showToast('Terms of Service — Coming soon')" style="color:var(--blue);font-weight:600;text-decoration:none;">Terms of Service</a>
+        and
+        <a href="#" onclick="showToast('Privacy Policy — Coming soon')" style="color:var(--blue);font-weight:600;text-decoration:none;">Privacy Policy</a>
+      </p>
     </div>
   </div>
 </div>
@@ -890,81 +896,159 @@ function patientHome(){
   const h=new Date().getHours();
   const greet=h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening';
   const firstName=(currentUser.name||'User').split(' ')[0];
+  const takenCount=medicines.filter(m=>m.taken).length;
+  const total=medicines.length;
+  const lowStock=medicines.filter(m=>m.stock<=5);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const soonAppts=appointments.filter(a=>{
+    const d=new Date(a.date); d.setHours(0,0,0,0);
+    const diff=Math.round((d-today)/(1000*60*60*24));
+    return diff>=0&&diff<=3;
+  });
   return`
   ${pushNotifBanner()}
   <div class="greeting-banner">
-    <div class="greeting-text"><h2>${greet}, ${firstName}! 👋</h2><p>Here's your health summary for today</p></div>
+    <div class="greeting-text">
+      <h2>${greet}, ${firstName}! 👋</h2>
+      <p>${total>0?`${takenCount} of ${total} medicines taken today`:'Here\'s your health summary for today'}</p>
+    </div>
     <div class="greeting-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></div>
   </div>
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-icon blue">${pillIco()}</div><div class="stat-value">${medicines.length}</div><div class="stat-label">Active Medicines</div></div>
-    <div class="stat-card"><div class="stat-icon purple">${calIco()}</div><div class="stat-value">${appointments.length}</div><div class="stat-label">Upcoming Appts</div></div>
-    <div class="stat-card"><div class="stat-icon orange">${warnIco()}</div><div class="stat-value">${medicines.filter(m=>m.stock<=5).length}</div><div class="stat-label">Refills Needed</div></div>
-    <div class="stat-card"><div class="stat-icon green">${checkIco()}</div><div class="stat-value">${medicines.length>0?Math.round((medicines.filter(m=>m.stock>5).length/medicines.length)*100):0}%</div><div class="stat-label">Stock Health</div></div>
+    <div class="stat-card"><div class="stat-icon blue">${pillIco()}</div><div class="stat-value">${total}</div><div class="stat-label">My Medicines</div></div>
+    <div class="stat-card"><div class="stat-icon green">${checkIco()}</div><div class="stat-value">${takenCount}/${total}</div><div class="stat-label">Taken Today</div></div>
+    <div class="stat-card"><div class="stat-icon purple">${calIco()}</div><div class="stat-value">${appointments.length}</div><div class="stat-label">Appointments</div></div>
+    <div class="stat-card"><div class="stat-icon orange">${warnIco()}</div><div class="stat-value">${lowStock.length}</div><div class="stat-label">Refills Needed</div></div>
   </div>
-  <div class="card">
-    <div class="card-header"><span class="card-title">⏰ Today's Reminders</span></div>
-    <div class="reminder-list">
-      ${medicines.map(m=>`
-      <div class="reminder-item">
-        <div class="reminder-left">
-          <div class="pill-ico">${pillIco()}</div>
-          <div><div class="r-name">${m.name}</div><div class="r-dose">${m.dose} · ${m.freq}</div></div>
+  ${soonAppts.length>0?`
+  <div class="card" style="border-color:var(--purple-light);background:linear-gradient(135deg,#faf5ff,#fff);">
+    <div class="card-header"><span class="card-title" style="color:var(--purple);">📅 Appointment Coming Soon!</span></div>
+    ${soonAppts.slice(0,1).map(a=>{
+      const d=new Date(a.date); d.setHours(0,0,0,0);
+      const diff=Math.round((d-today)/(1000*60*60*24));
+      const when=diff===0?'Today':diff===1?'Tomorrow':`In ${diff} days`;
+      return`<div style="display:flex;align-items:center;gap:14px;padding:4px 0;">
+        <div style="background:var(--purple);border-radius:12px;padding:10px 14px;text-align:center;color:#fff;flex-shrink:0;">
+          <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;">${d.toLocaleString('default',{month:'short'})}</div>
+          <div style="font-family:var(--font-h);font-size:1.5rem;font-weight:800;line-height:1;">${d.getDate()}</div>
         </div>
-        <div class="r-time-block"><div class="r-time">${m.time}</div><div class="r-eta">${calcETA(m.time)}</div></div>
-      </div>`).join('')}
-    </div>
-  </div>
-  ${medicines.some(m=>m.stock<=5)?`
-  <div class="refill-alert">
-    <div class="refill-alert-top">${warnIco()}<span>Refill Needed</span></div>
-    ${medicines.filter(m=>m.stock<=5).map(m=>`
-    <div class="refill-row">
-      <div class="refill-info"><div class="refill-name">${m.name}</div><div class="refill-sub">${m.dose} · Only ${m.stock} left</div></div>
-      <button class="btn-refill" onclick="showPage('pharmacy');showToast('Redirected to pharmacy')">Order Now</button>
-    </div>`).join('')}
-  </div>`:''}
-  <div class="card">
-    <div class="card-header"><span class="card-title">📅 Upcoming Appointment</span><button class="card-action outline" onclick="showPage('appointments')">${calIco()} View All</button></div>
-    ${appointments.slice(0,1).map(a=>{
-      const d=new Date(a.date);
-      return`<div class="appt-card-item">
-        <div class="appt-date"><div class="appt-month">${d.toLocaleString('default',{month:'short'})}</div><div class="appt-day">${d.getDate()}</div><div class="appt-wd">${d.toLocaleString('default',{weekday:'short'})}</div></div>
-        <div class="appt-info">
-          <div class="doc-name">${a.doc}</div>
-          <div class="doc-spec">${heartIco()}${a.spec}</div>
-          <div class="appt-meta-row">${calIco()}<span>${a.time}</span></div>
-          <div class="appt-meta-row">${locIco()}<span>${a.hosp}</span></div>
+        <div>
+          <div style="font-weight:700;font-size:0.95rem;">${a.doc}</div>
+          <div style="font-size:0.8rem;color:var(--gray-500);">${a.spec} · ${a.time} · ${a.hosp}</div>
+          <span style="display:inline-block;margin-top:5px;background:var(--purple-light);color:var(--purple);border-radius:50px;padding:2px 10px;font-size:0.72rem;font-weight:700;">${when}</span>
         </div>
       </div>`;
     }).join('')}
+  </div>`:''}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">💊 Today's Medicines</span>
+      <button class="card-action outline" onclick="showPage('medicines')">${pillIco()} Manage</button>
+    </div>
+    ${total===0
+      ?`<div style="text-align:center;padding:32px 20px;">
+          <div style="font-size:3.5rem;margin-bottom:12px;">💊</div>
+          <div style="font-weight:700;font-size:1rem;color:var(--gray-800);margin-bottom:6px;">No medicines added yet</div>
+          <div style="font-size:0.85rem;color:var(--gray-500);margin-bottom:18px;">Add your medicines to get daily reminders and track your intake.</div>
+          <button class="card-action" onclick="showPage('medicines')">${plusIco()} Add Your First Medicine</button>
+        </div>`
+      :medicines.map(m=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--gray-100);${m.taken?'opacity:0.65;':''}">
+        <div onclick="toggleTaken('${m.id}',this)"
+          style="width:30px;height:30px;border-radius:50%;border:2px solid ${m.taken?'var(--green)':'var(--blue)'};
+          background:${m.taken?'var(--green)':'transparent'};
+          display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s;">
+          ${m.taken?`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="white" style="width:15px;height:15px;"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>`:''}
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:0.92rem;${m.taken?'text-decoration:line-through;color:var(--gray-400);':''}">${m.name}</div>
+          <div style="font-size:0.75rem;color:var(--gray-500);">${m.dose} · ${m.freq}${m.stock<=5?' · <span style="color:var(--orange);font-weight:700;">⚠️ Only '+m.stock+' left</span>':''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:var(--font-h);font-weight:700;color:${m.taken?'var(--green)':'var(--blue)'};">${m.taken?'✓ Done':m.time}</div>
+          ${!m.taken?`<div style="font-size:0.72rem;color:var(--gray-400);">${calcETA(m.time)}</div>`:''}
+        </div>
+      </div>`).join('')}
+    ${total>0&&takenCount===total?`<div style="text-align:center;padding:14px;background:var(--green-light);border-radius:var(--r);margin-top:10px;font-weight:700;color:var(--green);">🎉 All medicines taken today! Great job!</div>`:''}
   </div>
+  ${lowStock.length>0?`
+  <div class="refill-alert">
+    <div class="refill-alert-top">${warnIco()}<span>Refill Needed — Running Low</span></div>
+    ${lowStock.map(m=>`
+    <div class="refill-row" style="margin-top:10px;">
+      <div class="refill-info"><div class="refill-name">${m.name}</div><div class="refill-sub">${m.dose} · Only <strong>${m.stock}</strong> left</div></div>
+      <button class="btn-refill" onclick="showPage('pharmacy')">Order Now</button>
+    </div>`).join('')}
+  </div>`:''}
+  ${appointments.length===0?`
+  <div class="card" style="text-align:center;padding:32px 20px;">
+    <div style="font-size:3.5rem;margin-bottom:12px;">📅</div>
+    <div style="font-weight:700;font-size:1rem;color:var(--gray-800);margin-bottom:6px;">No appointments yet</div>
+    <div style="font-size:0.85rem;color:var(--gray-500);margin-bottom:18px;">Schedule your doctor visits to keep track of them here.</div>
+    <button class="card-action" onclick="showPage('appointments')">${plusIco()} Add Appointment</button>
+  </div>`:soonAppts.length===0&&appointments.length>0?`
+  <div class="card">
+    <div class="card-header"><span class="card-title">📅 Next Appointment</span><button class="card-action outline" onclick="showPage('appointments')">${calIco()} View All</button></div>
+    ${(()=>{const a=appointments[0];const d=new Date(a.date);return`
+    <div class="appt-card-item">
+      <div class="appt-date"><div class="appt-month">${d.toLocaleString('default',{month:'short'})}</div><div class="appt-day">${d.getDate()}</div><div class="appt-wd">${d.toLocaleString('default',{weekday:'short'})}</div></div>
+      <div class="appt-info"><div class="doc-name">${a.doc}</div><div class="doc-spec">${heartIco()}${a.spec}</div><div class="appt-meta-row">${calIco()}<span>${a.time}</span></div><div class="appt-meta-row">${locIco()}<span>${a.hosp}</span></div></div>
+    </div>`;})()}
+  </div>`:''}
+  ${prescriptions.length>0?`
+  <div class="card">
+    <div class="card-header"><span class="card-title">📋 Prescriptions from Doctor</span></div>
+    ${prescriptions.map(rx=>`
+    <div style="padding:12px 4px;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-weight:700;font-size:0.9rem;">${rx.med} <span style="font-size:0.75rem;font-weight:400;color:var(--gray-500);">${rx.dose}</span></div>
+        <div style="font-size:0.75rem;color:var(--gray-500);">By Dr. ${rx.doctorName||'Doctor'} · ${rx.freq} · ${rx.duration}</div>
+        ${rx.notes?`<div style="font-size:0.75rem;color:var(--blue);font-style:italic;">${rx.notes}</div>`:''}
+      </div>
+      <div style="text-align:right;"><span class="pill green">Active</span><div style="font-size:0.72rem;color:var(--gray-400);margin-top:4px;">${rx.date||''}</div></div>
+    </div>`).join('')}
+  </div>`:''}
 `;}
 function patientMedicines(){return`
   <div class="page-title">My Medicines</div>
   <div class="page-sub">Manage your medication schedule and stock</div>
-  <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+    <div class="search-bar" style="flex:1;min-width:200px;margin-bottom:0;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+      <input type="text" placeholder="Search medicines..." oninput="searchMedicines(this.value)"/>
+    </div>
     <button class="card-action" onclick="openModal('modalMed')">${plusIco()} Add Medicine</button>
   </div>
-  <div id="medList">
-    ${renderMedList()}
-  </div>
+  ${medicines.length===0?`
+  <div class="card" style="text-align:center;padding:40px 20px;">
+    <div style="font-size:3.5rem;margin-bottom:12px;">💊</div>
+    <div style="font-weight:700;font-size:1.05rem;color:var(--gray-800);margin-bottom:8px;">No medicines added yet</div>
+    <div style="font-size:0.85rem;color:var(--gray-500);margin-bottom:20px;">Add your first medicine to start tracking your doses and get reminders.</div>
+    <button class="card-action" onclick="openModal('modalMed')">${plusIco()} Add First Medicine</button>
+  </div>`:`
+  <div id="medList">${renderMedList()}</div>`}
 `;}
+function searchMedicines(q){
+  document.querySelectorAll('.med-list-card').forEach(c=>{
+    c.style.display=c.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';
+  });
+}
 function renderMedList(){
+  if(!medicines.length) return`<div class="card" style="text-align:center;padding:32px;color:var(--gray-400);">No medicines found.</div>`;
   return medicines.map(m=>`
-  <div class="med-list-card" id="medCard${m.id}">
+  <div class="med-list-card${m.stock<=5?' low-stock':''}" id="medCard${m.id}">
     <div class="med-item">
       <div class="med-item-left">
         <div class="pill-ico">${pillIco()}</div>
         <div>
-          <div class="med-name">${m.name} ${m.stock<=5?'<span class="pill orange">Low Stock</span>':''}</div>
+          <div class="med-name">${m.name} ${m.stock<=5?'<span class="pill orange">Low Stock</span>':''} ${m.taken?'<span class="pill green">✓ Taken</span>':''}</div>
           <div class="med-meta">${m.dose} · ${m.freq}</div>
           <div class="next-time">${clockIco()} Next: ${m.time} · ${calcETA(m.time)}</div>
         </div>
       </div>
       <div class="med-item-actions">
-        <button class="icon-btn edit" onclick="showToast('Edit coming soon')" title="Edit">${editIco()}</button>
-        <button class="icon-btn del" onclick="deleteMed(${m.id})" title="Delete">${trashIco()}</button>
+        <button class="icon-btn edit" onclick="editMed('${m.id}')" title="Edit">${editIco()}</button>
+        <button class="icon-btn del" onclick="deleteMed('${m.id}')" title="Delete">${trashIco()}</button>
       </div>
     </div>
     <div style="padding:12px 18px;background:var(--gray-50);border-top:1px solid var(--gray-100);display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
@@ -1143,33 +1227,89 @@ function docHome(){
 function docPatients(){return`
   <div class="page-title">My Patients</div>
   <div class="page-sub">All registered patients on the platform</div>
-  <div class="search-bar"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="text" placeholder="Search patients..." oninput="searchPatients(this.value)"/></div>
+  <div class="search-bar"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="text" placeholder="Search patients by name or email..." oninput="searchPatients(this.value)"/></div>
   <div id="patientTable">
     ${renderPatientTable()}
   </div>
 `;}
 function renderPatientTable(){
-  if(patients.length===0) return`<div class="card" style="text-align:center;padding:40px;color:var(--gray-400);">No patients registered yet.<br><br><small>Patients will appear here after they sign up as Patient on this platform.</small></div>`;
+  if(patients.length===0) return`
+  <div class="card" style="text-align:center;padding:48px 20px;">
+    <div style="font-size:3.5rem;margin-bottom:12px;">👥</div>
+    <div style="font-weight:700;font-size:1.05rem;color:var(--gray-800);margin-bottom:8px;">No patients yet</div>
+    <div style="font-size:0.85rem;color:var(--gray-500);">Patients will appear here automatically once they sign up as Patient on MediCare.</div>
+  </div>`;
   return`<div class="card" style="padding:0;overflow:hidden;">
     <table class="table">
-      <thead><tr><th>Patient</th><th>Age</th><th>Blood</th><th>Email</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Patient</th><th>Age</th><th>Blood</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
       <tbody>
         ${patients.map(p=>`<tr>
-          <td><div class="patient-row"><div class="avatar blue">${(p.name||'?')[0]}</div><div class="patient-info"><div class="p-name">${p.name||'—'}</div></div></div></td>
+          <td><div class="patient-row">
+            <div class="avatar ${['blue','green','teal','purple','orange'][Math.abs((p.name||'').charCodeAt(0))%5]}">${(p.name||'?')[0].toUpperCase()}</div>
+            <div class="patient-info"><div class="p-name">${p.name||'—'}</div><div class="p-meta">Patient</div></div>
+          </div></td>
           <td>${p.age||'—'}</td>
           <td><span class="pill blue">${p.blood||'—'}</span></td>
           <td style="font-size:0.78rem;color:var(--gray-500);">${p.email||'—'}</td>
+          <td style="font-size:0.78rem;color:var(--gray-500);">${p.phone||'—'}</td>
           <td><div style="display:flex;gap:4px;">
-            <button class="icon-btn edit" title="Prescribe" onclick="document.getElementById('rxPatient').value='${p.name||''}';openModal('modalRx')">${rxIco()}</button>
+            <button class="icon-btn view" title="View Details" onclick="viewPatientDetail('${p.id||p.email}')" >${eyeIco()}</button>
+            <button class="icon-btn edit" title="Write Prescription" onclick="openRxForPatient('${p.id||''}','${(p.name||'').replace(/'/g,'')}')">${rxIco()}</button>
           </div></td>
         </tr>`).join('')}
       </tbody>
     </table>
   </div>`;
 }
+function viewPatientDetail(pid){
+  const p=patients.find(x=>(x.id===pid||x.email===pid));
+  if(!p){showToast('Patient not found','error');return;}
+  const info=[
+    ['Full Name',p.name||'—'],['Email',p.email||'—'],['Age',p.age||'—'],
+    ['Blood Type',p.blood||'—'],['Phone',p.phone||'—'],['Gender',p.gender||'—'],
+    ['Height',p.height&&p.height!=='—'?p.height+' cm':'—'],
+    ['Weight',p.weight&&p.weight!=='—'?p.weight+' kg':'—'],
+    ['Emergency Contact',p.emergencyName||'—'],['Emergency Phone',p.emergencyPhone||'—'],
+  ];
+  const modal=document.createElement('div');
+  modal.className='modal-overlay open';
+  modal.style.zIndex='600';
+  modal.innerHTML=`<div class="modal">
+    <div class="modal-head" style="background:var(--blue);border-radius:20px 20px 0 0;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-weight:700;color:#fff;font-size:1rem;">${(p.name||'?')[0].toUpperCase()}</div>
+        <div><h3 style="color:#fff;font-size:1rem;">${p.name||'Patient'}</h3><p style="color:rgba(255,255,255,0.7);font-size:0.78rem;">Patient Profile</p></div>
+      </div>
+      <button class="modal-close" style="color:rgba(255,255,255,0.8);" onclick="this.closest('.modal-overlay').remove()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        ${info.map(([l,v])=>`<div style="background:var(--gray-50);border-radius:var(--r);padding:12px;">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;margin-bottom:4px;">${l}</div>
+          <div style="font-weight:700;font-size:0.9rem;color:var(--gray-800);">${v}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-save" onclick="openRxForPatient('${p.id||''}','${(p.name||'').replace(/'/g,'')}');this.closest('.modal-overlay').remove()">Write Prescription</button>
+    </div>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
+function openRxForPatient(uid,name){
+  const sel=document.getElementById('rxPatient');
+  if(sel){
+    for(let o of sel.options){
+      if(o.text===name||o.value===uid){sel.value=o.value;break;}
+    }
+  }
+  openModal('modalRx');
+}
 function searchPatients(q){
-  const rows=document.querySelectorAll('#patientTable tbody tr');
-  rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';});
+  document.querySelectorAll('#patientTable tbody tr').forEach(r=>{
+    r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';
+  });
 }
 function docAppointments(){return`
   <div class="page-title">Appointments</div>
@@ -1366,7 +1506,18 @@ function doLogout(){showScreen('landing');showToast('Signed out successfully','s
 // ══════════════════════════════════════════
 //  MODALS
 // ══════════════════════════════════════════
-function openModal(id){document.getElementById(id).classList.add('open');}
+function openModal(id){
+  // Rebuild patient dropdown with real patients before opening Rx modal
+  if(id==='modalRx'){
+    const sel=document.getElementById('rxPatient');
+    if(sel){
+      sel.innerHTML=patients.length>0
+        ?patients.map(p=>`<option value="${p.id||p.email}">${p.name||p.email}</option>`).join('')
+        :'<option value="">No patients registered yet</option>';
+    }
+  }
+  document.getElementById(id).classList.add('open');
+}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.addEventListener('click',function(e){if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('open');});
 
@@ -1694,6 +1845,12 @@ async function loadUserData(uid){
       // Load medicines
       const ms = await getDocs(query(collection(db,'medicines'),where('uid','==',uid)));
       medicines=[]; ms.forEach(d=>medicines.push({id:d.id,...d.data()}));
+      // Auto-notify for low stock
+      setTimeout(()=>{
+        medicines.filter(m=>m.stock<=5).forEach(m=>{
+          addNotification(warnIco(),`Refill Needed: ${m.name}`,`Only ${m.stock} pills left — order from Pharmacy`,'warn');
+        });
+      },1500);
       // Load appointments
       const as = await getDocs(query(collection(db,'appointments'),where('uid','==',uid)));
       appointments=[]; as.forEach(d=>appointments.push({id:d.id,...d.data()}));
@@ -1720,8 +1877,10 @@ window.doSignup = async function(){
   const last=document.getElementById('signupLast').value.trim();
   const email=document.getElementById('signupEmail').value.trim();
   const pass=document.getElementById('signupPass').value;
+  const confirm=document.getElementById('signupConfirm').value;
   if(!first||!last||!email||!pass){showToast('Please fill in all fields','error');return;}
   if(pass.length<6){showToast('Password must be at least 6 characters','error');return;}
+  if(pass!==confirm){showToast('Passwords do not match. Please re-enter.','error');return;}
   showLoading('Creating your account...');
   try {
     const cred = await createUserWithEmailAndPassword(auth,email,pass);
@@ -1932,6 +2091,8 @@ window.saveAppointment = async function(){
     appointments.push({id:ref.id,...data});
     closeModal('modalAppt');
     ['aDoc','aSpec','aHosp','aNotes'].forEach(id=>document.getElementById(id).value='');
+    // Add notification for appointment
+    addNotification(calIco(),`Appointment Scheduled`,`${data.doc} on ${data.date} at ${data.time}`,'appt');
     refreshPage();
     hideLoading();
     showToast('Appointment added! 📅','success');
