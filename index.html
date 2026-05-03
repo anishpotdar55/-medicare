@@ -1091,15 +1091,30 @@ function renderApptList(){
 function patientPharmacy(){return`
   <div class="page-title">Pharmacy</div>
   <div class="page-sub">Order medicines and manage your prescriptions</div>
+
+  <!-- Cart Floating Bar -->
+  <div id="cartBar" style="display:none;position:sticky;top:70px;z-index:50;background:var(--blue);border-radius:var(--r);padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md);">
+    <div style="display:flex;align-items:center;gap:10px;color:#fff;">
+      ${cartIco()}
+      <span style="font-weight:700;font-size:0.95rem;">Cart: <span id="cartCount">0</span> item(s)</span>
+      <span style="font-size:0.85rem;opacity:0.8;">Total: ₹<span id="cartTotal">0.00</span></span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="clearCart()" style="padding:7px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1.5px solid rgba(255,255,255,0.3);border-radius:var(--r-sm);font-family:var(--font-b);font-size:0.82rem;font-weight:600;cursor:pointer;">Clear</button>
+      <button onclick="openCart()" style="padding:7px 16px;background:#fff;color:var(--blue);border:none;border-radius:var(--r-sm);font-family:var(--font-h);font-size:0.82rem;font-weight:700;cursor:pointer;">View Cart & Order</button>
+    </div>
+  </div>
+
   ${medicines.some(m=>m.stock<=5)?`
   <div class="refill-alert" style="margin-bottom:16px;">
     <div class="refill-alert-top">${warnIco()}<span>Refill Recommended — Medicines running low</span></div>
     ${medicines.filter(m=>m.stock<=5).map(m=>`
     <div class="refill-row">
       <div class="refill-info"><div class="refill-name">${m.name}</div><div class="refill-sub">${m.dose} · ${m.stock} left</div></div>
-      <button class="btn-refill" onclick="showToast('Quick order placed for '+' ${m.name}!','success')">Quick Order</button>
+      <button class="btn-refill" onclick="addToCart('${m.name}','89.99');showToast('${m.name} added to cart! 🛒','success')">Quick Order</button>
     </div>`).join('')}
   </div>`:''}
+
   <div class="search-bar"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="text" placeholder="Search medicines..." oninput="filterPharm(this.value)"/></div>
   <div class="filter-row" id="pharmFilters">
     <button class="chip active" onclick="pharmFilter('All',this)">All</button>
@@ -1118,7 +1133,7 @@ function patientPharmacy(){return`
       <div class="pharm-card-dose">${p.dose}</div>
       <div class="pharm-card-price">₹${p.price}</div>
       <div class="pharm-card-stock">✓ In Stock</div>
-      <button class="btn-cart" onclick="showToast('${p.name} added to cart! 🛒','success')">${cartIco()} Add to Cart</button>
+      <button class="btn-cart" onclick="addToCart('${p.name}','${p.price}')">${cartIco()} Add to Cart</button>
     </div>`).join('')}
   </div>
 `;}
@@ -1691,25 +1706,36 @@ function clearNotifications(){
 let notifPermission=false;
 function requestPushNotifications(){
   if(!('Notification' in window)){
-    showToast('Notifications not supported on this browser','error');
+    showToast('Notifications not supported in this browser','error');
+    return;
+  }
+  if(Notification.permission==='granted'){
+    notifPermission=true;
+    scheduleMedicineReminders();
+    showToast('Reminders are already enabled! 🔔','success');
+    if(currentPage==='home') refreshPage();
     return;
   }
   Notification.requestPermission().then(perm=>{
     notifPermission=(perm==='granted');
     if(notifPermission){
-      showToast('Notifications enabled! You will be reminded for medicines 💊','success');
-      addNotification(pillIco(),'Notifications Enabled','You will receive medicine reminders','med');
+      showToast('Reminders enabled! You will be notified for each medicine 💊','success');
+      addNotification(
+        `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>`,
+        'Reminders Enabled!',
+        `${medicines.length} medicine(s) scheduled`,'med');
       scheduleMedicineReminders();
-      // Re-render home to remove the banner
       if(currentPage==='home') refreshPage();
     } else {
-      showToast('Notifications blocked. Please allow from browser settings.','error');
+      showToast('Permission denied. Please allow notifications in browser settings → Site Settings.','error');
     }
   });
 }
 function scheduleMedicineReminders(){
   if(!notifPermission) return;
+  if(!medicines.length) return;
   medicines.forEach(m=>{
+    if(!m.time) return;
     const [h,min]=m.time.split(':').map(Number);
     const now=new Date();
     const target=new Date();
@@ -1717,19 +1743,47 @@ function scheduleMedicineReminders(){
     if(target<=now) target.setDate(target.getDate()+1);
     const delay=target-now;
     setTimeout(()=>{
-      // Show browser notification
-      new Notification('💊 Medicine Reminder — MediCare',{
-        body:`Time to take ${m.name} (${m.dose})`,
-        icon:'/favicon.ico',
-        badge:'/favicon.ico'
-      });
-      // Add to in-app notifications
-      addNotification(pillIco(),`Time for ${m.name}`,`${m.dose} · ${m.freq}`,'med');
+      // Browser push notification
+      if(notifPermission && Notification.permission==='granted'){
+        try{
+          new Notification('💊 Medicine Reminder — MediCare',{
+            body:`Time to take ${m.name} (${m.dose})`,
+            icon:'https://anishpotdar55.github.io/-medicare/favicon.ico',
+          });
+        }catch(e){ console.log('Notification error:',e); }
+      }
+      // In-app notification + toast
+      addNotification(`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/></svg>`,
+        `⏰ Time for ${m.name}`, `${m.dose} · ${m.freq}`, 'med');
       showToast(`⏰ Time to take ${m.name} (${m.dose})!`,'success');
-      // Reschedule for next day
-      setTimeout(()=>scheduleMedicineReminders(), 60000);
+      // Reschedule same medicine for next day (24h later)
+      setTimeout(()=>scheduleSingleMedicine(m), 24*60*60*1000);
     }, delay);
   });
+}
+
+function scheduleSingleMedicine(m){
+  if(!notifPermission || !m || !m.time) return;
+  const [h,min]=m.time.split(':').map(Number);
+  const now=new Date();
+  const target=new Date();
+  target.setHours(h,min,0,0);
+  if(target<=now) target.setDate(target.getDate()+1);
+  const delay=target-now;
+  setTimeout(()=>{
+    if(notifPermission && Notification.permission==='granted'){
+      try{
+        new Notification('💊 Medicine Reminder — MediCare',{
+          body:`Time to take ${m.name} (${m.dose})`,
+          icon:'https://anishpotdar55.github.io/-medicare/favicon.ico',
+        });
+      }catch(e){}
+    }
+    addNotification(`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/></svg>`,
+      `⏰ Time for ${m.name}`,`${m.dose} · ${m.freq}`,'med');
+    showToast(`⏰ Time to take ${m.name} (${m.dose})!`,'success');
+    setTimeout(()=>scheduleSingleMedicine(m), 24*60*60*1000);
+  }, delay);
 }
 
 // ══════════════════════════════════════════
@@ -1755,16 +1809,17 @@ function loadHistory(){
 //  PUSH NOTIFICATION BANNER (in home page)
 // ══════════════════════════════════════════
 function pushNotifBanner(){
-  if(notifPermission || !('Notification' in window)) return '';
+  if(typeof Notification==='undefined') return '';
   if(Notification.permission==='granted'){ notifPermission=true; return ''; }
+  if(notifPermission) return '';
   return`
-  <div class="push-banner">
+  <div class="push-banner" style="margin-bottom:16px;">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
     <div class="push-banner-text">
-      <h4>Enable Medicine Reminders</h4>
-      <p>Get notified when it's time to take your medicine</p>
+      <h4>⚠️ Enable Medicine Reminders</h4>
+      <p>Tap Enable so the app notifies you when it's time to take medicine — even when the app is in the background.</p>
     </div>
-    <button class="btn-enable-notif" onclick="requestPushNotifications()">Enable</button>
+    <button class="btn-enable-notif" onclick="requestPushNotifications()">Enable Now</button>
   </div>`;
 }
 
@@ -2237,21 +2292,102 @@ window.saveProfile = async function(){
 window.addToCart = function(name,price){
   const existing=cartItems.find(c=>c.name===name);
   if(existing){ existing.qty++; }
-  else { cartItems.push({name,price,qty:1}); }
-  updateCartBadge();
+  else { cartItems.push({name,price:parseFloat(price),qty:1}); }
+  updateCartUI();
   showToast(name+' added to cart! 🛒','success');
 };
-function updateCartBadge(){
+function updateCartUI(){
+  const totalQty=cartItems.reduce((s,c)=>s+c.qty,0);
+  const totalPrice=cartItems.reduce((s,c)=>s+(c.price*c.qty),0).toFixed(2);
+  // update floating bar
+  const bar=document.getElementById('cartBar');
+  const countEl=document.getElementById('cartCount');
+  const totalEl=document.getElementById('cartTotal');
+  if(bar){
+    bar.style.display=totalQty>0?'flex':'none';
+    if(countEl) countEl.textContent=totalQty;
+    if(totalEl) totalEl.textContent=totalPrice;
+  }
+  // update old badge if exists
   const badge=document.getElementById('cartBadge');
-  if(badge) badge.textContent=cartItems.reduce((s,c)=>s+c.qty,0);
+  if(badge) badge.textContent=totalQty;
 }
-window.viewCart = function(){
-  if(cartItems.length===0){showToast('Your cart is empty','error');return;}
-  const total=cartItems.reduce((s,c)=>s+(parseFloat(c.price)*c.qty),0).toFixed(2);
-  const list=cartItems.map(c=>`${c.name} x${c.qty} — ₹${(parseFloat(c.price)*c.qty).toFixed(2)}`).join('\n');
-  alert(`🛒 Your Cart:\n\n${list}\n\nTotal: ₹${total}\n\nOrder placed successfully!`);
+function updateCartBadge(){ updateCartUI(); }
+
+window.openCart = function(){
+  if(cartItems.length===0){showToast('Your cart is empty. Add medicines first.','error');return;}
+  // Remove existing cart modal if open
+  const old=document.getElementById('cartModal');
+  if(old) old.remove();
+
+  const total=cartItems.reduce((s,c)=>s+(c.price*c.qty),0).toFixed(2);
+  const modal=document.createElement('div');
+  modal.id='cartModal';
+  modal.className='modal-overlay open';
+  modal.style.zIndex='600';
+  modal.innerHTML=`
+  <div class="modal">
+    <div class="modal-head" style="background:var(--blue);border-radius:20px 20px 0 0;">
+      <h3 style="color:#fff;font-family:var(--font-h);font-size:1.05rem;">🛒 Your Cart</h3>
+      <button class="modal-close" style="color:rgba(255,255,255,0.8);" onclick="document.getElementById('cartModal').remove()">×</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      ${cartItems.map(c=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-100);">
+        <div>
+          <div style="font-weight:700;font-size:0.92rem;">${c.name}</div>
+          <div style="font-size:0.78rem;color:var(--gray-500);">₹${c.price.toFixed(2)} × ${c.qty}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button onclick="changeQty('${c.name}',-1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--gray-300);background:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;">−</button>
+            <span style="font-weight:700;min-width:20px;text-align:center;">${c.qty}</span>
+            <button onclick="changeQty('${c.name}',1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--blue);background:var(--blue);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;">+</button>
+          </div>
+          <div style="font-family:var(--font-h);font-weight:700;color:var(--blue);min-width:60px;text-align:right;">₹${(c.price*c.qty).toFixed(2)}</div>
+        </div>
+      </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:2px solid var(--gray-200);">
+        <div style="font-family:var(--font-h);font-weight:700;font-size:1rem;color:var(--gray-800);">Total</div>
+        <div style="font-family:var(--font-h);font-weight:800;font-size:1.2rem;color:var(--blue);">₹${total}</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="clearCart();document.getElementById('cartModal').remove()">Clear Cart</button>
+      <button class="btn-save" onclick="placeOrder()">Place Order ✓</button>
+    </div>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+};
+
+window.changeQty = function(name, delta){
+  const item=cartItems.find(c=>c.name===name);
+  if(!item) return;
+  item.qty+=delta;
+  if(item.qty<=0) cartItems=cartItems.filter(c=>c.name!==name);
+  updateCartUI();
+  // Reopen cart to refresh
+  const old=document.getElementById('cartModal');
+  if(old){ old.remove(); openCart(); }
+};
+
+window.clearCart = function(){
   cartItems=[];
-  updateCartBadge();
+  updateCartUI();
+  const old=document.getElementById('cartModal');
+  if(old) old.remove();
+};
+
+window.placeOrder = function(){
+  const total=cartItems.reduce((s,c)=>s+(c.price*c.qty),0).toFixed(2);
+  const items=cartItems.map(c=>`${c.name} x${c.qty}`).join(', ');
+  cartItems=[];
+  updateCartUI();
+  const old=document.getElementById('cartModal');
+  if(old) old.remove();
+  showToast(`Order placed! ₹${total} — ${items} 🎉`,'success');
+  addNotification(cartIco(),'Order Placed Successfully',`Total: ₹${total}`,'med');
 };
 
 // ════════════════════════════════════════
